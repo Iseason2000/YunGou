@@ -27,29 +27,49 @@ runtime-libraries:
       artifactId: kotlin-stdlib-jdk8
       version: ${kotlinVersion}
 # reflection lib
-#    kotlin-reflect:
-#      repository: https://maven.aliyun.com/repository/public
-#      groupId: org.jetbrains.kotlin
-#      artifactId: kotlin-reflect
-#      version: ${kotlinVersion}
+    kotlin-reflect:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.jetbrains.kotlin
+      artifactId: kotlin-reflect
+      version: ${kotlinVersion}
 # coroutines lib
 #    kotlinx-coroutines-core:
 #      repository: https://maven.aliyun.com/repository/public
 #      groupId: org.jetbrains.kotlinx
 #      artifactId: kotlinx-coroutines-core
 #      version: 1.6.2
-#    exposed-core:
-#      repository: https://maven.aliyun.com/repository/public
-#      groupId: org.jetbrains.exposed
-#      artifactId: exposed-core
-#      version: ${exposedVersion}
-#    exposed-dao:
-#      repository: https://maven.aliyun.com/repository/public
-#      groupId: org.jetbrains.exposed
-#      artifactId: exposed-dao
-#      version: ${exposedVersion}
-#    exposed-jdbc:
-#      repository: https://maven.aliyun.com/repository/public
-#      groupId: org.jetbrains.exposed
-#      artifactId: exposed-jdbc
-#      version: ${exposedVersion}
+    exposed-core:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.jetbrains.exposed
+      artifactId: exposed-core
+      version: ${exposedVersion}
+    exposed-dao:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.jetbrains.exposed
+      artifactId: exposed-dao
+      version: ${exposedVersion}
+    exposed-jdbc:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.jetbrains.exposed
+      artifactId: exposed-jdbc
+      version: ${exposedVersion}
+    exposed-java-time:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.jetbrains.exposed
+      artifactId: exposed-java-time
+      version: ${exposedVersion}
+    mysql-connector:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: mysql
+      artifactId: mysql-connector-java
+      version: 8.0.29
+    slf4j-api:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.slf4j
+      artifactId: slf4j-api
+      version: 1.7.25
+    slf4j-simple:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: org.slf4j
+      artifactId: slf4j-simple
+      version: 1.7.25

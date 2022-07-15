@@ -12,7 +12,6 @@ class ConfigWatcher private constructor(private val folder: File) : BukkitRunnab
     private var isEnable = true
     private val service: WatchService = FileSystems.getDefault().newWatchService()
         .apply { folder.toPath().register(this, StandardWatchEventKinds.ENTRY_MODIFY) }
-
     override fun run() {
         while (isEnable) {
             val key = try {

@@ -32,9 +32,10 @@ val shadowJar: ShadowJar by tasks
 val exposedVersion: String by project
 repositories {
 //    阿里的服务器速度快一点
+    mavenLocal()
     maven {
         name = "aliyun"
-        url = uri("https://maven.aliyun.com/repository/public/")
+        url = uri("https://maven.aliyun.com/repository/public")
     }
     google()
     mavenCentral()
@@ -46,14 +47,14 @@ repositories {
         name = "jitpack"
         url = uri("https://jitpack.io")
     }
-    mavenLocal()
+
 }
 
 dependencies {
     //基础库
     compileOnly(kotlin("stdlib-jdk8"))
 //    反射库
-//    compileOnly(kotlin("reflect"))
+    compileOnly(kotlin("reflect"))
 
 //    协程库
 //    compileOnly("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.2")
@@ -61,9 +62,10 @@ dependencies {
     compileOnly("org.jetbrains.exposed:exposed-core:$exposedVersion")
     compileOnly("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     compileOnly("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-
+    compileOnly("mysql:mysql-connector-java:8.0.29")
+    compileOnly("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
     implementation("org.bstats:bstats-bukkit:3.0.0")
-    compileOnly("org.spigotmc:spigot-api:1.18-R0.1-SNAPSHOT")
+    compileOnly("org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT")
 
 }
 
@@ -129,6 +131,7 @@ tasks.register<proguard.gradle.ProGuardTask>("buildPlugin") {
     keep("class $groupS.lib.core.TemplatePlugin {}")
     keep(allowObf, "class * implements $groupS.lib.core.KotlinPlugin {*;}")
     keepclassmembers("class * extends $groupS.lib.core.config.SimpleYAMLConfig {*;}")
+    keepclassmembers("class * extends org.jetbrains.exposed.dao.Entity {*;}")
     keepclassmembers(allowObf, "class * implements org.bukkit.event.Listener {*;}")
     keepclassmembers(allowObf, "class $groupS.lib.core.utils.MessageKt {*;}")
     keepattributes("Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod")

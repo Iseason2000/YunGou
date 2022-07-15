@@ -1,4 +1,4 @@
-package top.iseason.bukkit.templateplugin
+package top.iseason.bukkit.yungou
 
 import org.bukkit.configuration.file.FileConfiguration
 import top.iseason.bukkit.bukkittemplate.config.SimpleYAMLConfig

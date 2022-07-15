@@ -1,4 +1,4 @@
-package top.iseason.bukkit.templateplugin
+package top.iseason.bukkit.yungou
 
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissionDefault
@@ -91,61 +91,3 @@ fun command2() {
         true
     }
 }
-
-fun command3() {
-    TestNode.registerAsRoot()
-}
-
-fun command4() {
-    commandRoot("testcommand") {
-        node("node1") {
-            node("node2") {
-                testNode()
-            }
-        }
-        node("node4")
-        node("node5")
-    }
-}
-
-fun openUICommand() {
-    commandRoot("openUI", isPlayerOnly = true).onExecute {
-        (it as Player).openUI<MyUI> {
-            title = it.displayName
-        }
-        true
-    }
-    commandRoot("openMultiUI", isPlayerOnly = true).onExecute {
-        (it as Player).openPageableUI<MultiUI>()
-        true
-    }
-}
-
-fun CommandBuilder.testNode() = node("node3") {
-    onExecute {
-        it.sendMessage("hello")
-        true
-    }
-}
-
-object TestNode : CommandNode(
-    "testnode",
-    alias = arrayOf("testnode2", "testnode3"),
-    default = PermissionDefault.OP,
-    async = true,
-    description = "测试命令-单独类",
-    params = arrayOf(
-        Param("<玩家>", suggestRuntime = ParamSuggestCache.playerParam),
-        Param("[金钱]", listOf("1", "5", "10", "-5", "-1"))
-    )
-) {
-    init {
-        onExecute = {
-            val player = getParam<Player>(0)
-            val money = getOptionalParam<Double>(1)
-            player.sendMessage(money.toString())
-            true
-        }
-    }
-}
-
