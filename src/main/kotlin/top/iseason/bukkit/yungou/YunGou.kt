@@ -40,6 +40,7 @@ object YunGou : KotlinPlugin() {
         //如果使用配置模块，取消注销
         ConfigWatcher.onDisable()
         TransactionManager.closeAndUnregister(mysql)
+        Config.ds?.close()
         info("&6插件已卸载!")
     }
 

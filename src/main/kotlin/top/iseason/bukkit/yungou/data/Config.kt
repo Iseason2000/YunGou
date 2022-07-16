@@ -41,12 +41,13 @@ object Config : SimpleYAMLConfig(isAutoUpdate = false) {
     }
     override val onSaved: (FileConfiguration.() -> Unit) = {
     }
-
+    var ds: HikariDataSource? = null
     fun reConnected() {
         info("&6数据库链接中...")
         submit(async = true) {
             try {
                 try {
+                    ds?.close()
                     TransactionManager.closeAndUnregister(YunGou.mysql)
                 } catch (_: Exception) {
                 }
@@ -62,7 +63,8 @@ object Config : SimpleYAMLConfig(isAutoUpdate = false) {
                     poolName = "云购"
                 }
                 val schema = Schema(dbName)
-                YunGou.mysql = Database.connect(HikariDataSource(config))
+                ds = HikariDataSource(config)
+                YunGou.mysql = Database.connect(ds!!)
                 transaction {
 //                    addLogger(StdOutSqlLogger)
                     SchemaUtils.createSchema(schema)

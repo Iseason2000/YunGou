@@ -10,8 +10,9 @@ class Cargo(id: EntityID<String>) : StringEntity(id) {
 
     var item by Cargos.item
     var num by Cargos.num
+    var enable by Cargos.enable
     var startTime by Cargos.startTime
-    var endTime by Cargos.endTime
+    var coolDown by Cargos.coolDown
 }
 
 abstract class StringEntity(id: EntityID<String>) : Entity<String>(id)

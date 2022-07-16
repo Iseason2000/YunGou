@@ -6,10 +6,11 @@ import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.javatime.datetime
 
 object Cargos : StringIdTable() {
-    val item = text("item")
+    val item = blob("item")
     val num = integer("num")
+    val enable = bool("enable").default(true)
     val startTime = datetime("startTime")
-    val endTime = datetime("endTime")
+    val coolDown = integer("coolDown")
 }
 
 open class StringIdTable(name: String = "", columnName: String = "id") : IdTable<String>(name) {

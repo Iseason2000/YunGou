@@ -169,7 +169,8 @@ open class CommandNode(
         var incomplete = ""
         var deep = 0
         for ((index, arg) in args.withIndex()) {
-            if (arg.isBlank() && args.getOrNull(index + 1) != null) return null
+            if (arg.isBlank()) break
+            if (args.getOrNull(index + 1) != null) return null
             val subNode = node.getSubNode(arg, sender)
             if (subNode == null) {
                 incomplete = arg
@@ -182,7 +183,9 @@ open class CommandNode(
         if (keys.isEmpty() && node.params.isNotEmpty()) {
             val last = args.last()
             val param = node.params.getOrNull(args.size - deep - 1) ?: return null
-            return (param.suggestRuntime?.invoke(sender) ?: param.suggest)?.filter { it.startsWith(last) }
+            return (param.suggestRuntime?.invoke(sender) ?: param.suggest)?.filter {
+                it.startsWith(last)
+            }
         }
         return keys.filter { it.startsWith(incomplete) }
     }

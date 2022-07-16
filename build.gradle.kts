@@ -62,12 +62,12 @@ dependencies {
     compileOnly("org.jetbrains.exposed:exposed-core:$exposedVersion")
     compileOnly("org.jetbrains.exposed:exposed-dao:$exposedVersion")
     compileOnly("org.jetbrains.exposed:exposed-jdbc:$exposedVersion")
-    compileOnly("mysql:mysql-connector-java:8.0.29")
     compileOnly("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
+    compileOnly("mysql:mysql-connector-java:8.0.29")
     compileOnly("com.zaxxer:HikariCP:4.0.3")
     implementation("org.bstats:bstats-bukkit:3.0.0")
     compileOnly("org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT")
-
+    compileOnly(fileTree("libs"))
 }
 
 
