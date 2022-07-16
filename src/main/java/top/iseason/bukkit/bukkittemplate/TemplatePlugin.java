@@ -29,8 +29,8 @@ public class TemplatePlugin extends JavaPlugin {
             classes = loadClass();
             ktPlugin = findInstance();
             ktPlugin.javaPlugin = this;
-            plugin.onAsyncLoad();
             plugin.setEnabled(true);
+            plugin.onAsyncLoad();
             Bukkit.getScheduler().runTask(plugin, () -> plugin.onEnabled());
             Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> plugin.onAsyncEnabled());
         }).start();

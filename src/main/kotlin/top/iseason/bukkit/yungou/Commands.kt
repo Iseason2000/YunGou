@@ -1,93 +1,50 @@
 package top.iseason.bukkit.yungou
 
-import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissionDefault
-import org.bukkit.potion.PotionEffect
-import org.bukkit.potion.PotionEffectType
-import top.iseason.bukkit.bukkittemplate.command.*
-import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
-import top.iseason.bukkit.bukkittemplate.ui.openPageableUI
-import top.iseason.bukkit.bukkittemplate.ui.openUI
-import top.iseason.bukkit.bukkittemplate.utils.sendMessage
+import org.jetbrains.exposed.sql.transactions.transaction
+import top.iseason.bukkit.bukkittemplate.command.commandRoot
+import top.iseason.bukkit.yungou.data.Cargo
+import top.iseason.bukkit.yungou.data.Config
+import top.iseason.bukkit.yungou.data.Record
+import java.time.LocalDateTime
+import java.util.*
 
-fun command1() {
-    commandRoot("playerutil", alias = arrayOf("test1", "test2"), description = "测试命令1") {
+fun mainCommand() {
+    commandRoot(
+        "yungou",
+        alias = arrayOf("yg"),
+        default = PermissionDefault.OP,
+        description = "云购命令节点"
+    ) {
         node(
-            "potion",
-            description = "玩家药水控制",
-            default = PermissionDefault.OP,
-            isPlayerOnly = true,
-            params = arrayOf(
-                Param("<操作>", listOf("add", "set", "remove")),
-                Param("<药水类型>", ParamSuggestCache.potionTypes),
-                Param("[玩家]", suggestRuntime = ParamSuggestCache.playerParam),
-                Param("[等级]", listOf("0", "1", "2", "3", "4")),
-                Param("[秒]", listOf("1", "5", "10"))
-            )
+            "reConnect", alias = arrayOf("重连"), default = PermissionDefault.OP, description = "重新链接数据库"
         ) {
             onExecute {
-                val operation = getParam<String>(0)
-                if (operation !in setOf("add", "set", "remove"))
-                    throw ParmaException("&7参数 &c${operation}&7 不是一个有效的操作,支持的有: add、set、remove")
-                val type = getParam<PotionEffectType>(1)
-                var player = getOptionalParam<Player>(2)
-                var reduce = 0
-                if (player == null) {
-                    player = it as Player
-                    reduce++
-                }
-                var level = getOptionalParam<Int>(3 - reduce)
-                if (level == null) {
-                    level = 0
-                    reduce++
-                }
-                var time = ((getOptionalParam<Double>(4 - reduce) ?: 10.0) * 20.0).toInt()
-
-                when (operation) {
-                    "add" -> {
-                        val potionEffect = player.getPotionEffect(type)
-                        if (potionEffect != null) time += potionEffect.duration
-                        player.addPotionEffect(PotionEffect(type, time, level))
+                Config.reConnected()
+                true
+            }
+            onSuccess("&a配置已重载")
+        }
+        node(
+            "test", alias = arrayOf(""), default = PermissionDefault.OP, description = "", async = true
+        ) {
+            onExecute {
+                transaction {
+                    val c = Cargo.findById("test") ?: Cargo.new("test") {
+                        item = "afasf5s1d65fgv4sdf5"
+                        num = 100
+                        startTime = LocalDateTime.now()
+                        endTime = LocalDateTime.now().plusDays(10)
                     }
-                    "set" -> {
-                        player.removePotionEffect(type)
-                        player.addPotionEffect(PotionEffect(type, time, level))
-                    }
-                    else -> {
-                        player.removePotionEffect(type)
+                    Record.new {
+                        uid = UUID.randomUUID()
+                        cargo = c
+                        num = 1
+                        time = LocalDateTime.now()
                     }
                 }
                 true
             }
-            onSuccess("${SimpleLogger.prefix}&a命令已执行!")
         }
-
-        node("other", default = PermissionDefault.OP, description = "测试节点2") {
-            node("test3", alias = arrayOf("test1", "test2"), description = "测试命令") {
-                onExecute {
-                    true
-                }
-            }
-        }
-    }
-}
-
-fun command2() {
-    commandRoot(
-        "2node",
-        alias = arrayOf("node2", "node3"),
-        default = PermissionDefault.OP,
-        async = true,
-        description = "测试命令2",
-        params = arrayOf(
-            Param("<玩家>", suggestRuntime = ParamSuggestCache.playerParam),
-            Param("[数字]", listOf("1", "5", "10", "-5", "-1"))
-        )
-    ).onExecute {
-        val param1 = getParam<Int>(0)
-        val param2 = getOptionalParam<Double>(1)
-        it.sendMessage(param1)
-        it.sendMessage(param2)
-        true
     }
 }

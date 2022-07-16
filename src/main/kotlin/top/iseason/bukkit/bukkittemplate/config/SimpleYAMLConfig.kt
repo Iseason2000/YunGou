@@ -90,7 +90,8 @@ abstract class SimpleYAMLConfig(
     }
 
     init {
-        ConfigWatcher.fromFile(configPath.absoluteFile)
+        if (isAutoUpdate)
+            ConfigWatcher.fromFile(configPath.absoluteFile)
         configs[configPath.absolutePath] = this
         loadAsync(false)
     }

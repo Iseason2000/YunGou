@@ -73,3 +73,8 @@ runtime-libraries:
       groupId: org.slf4j
       artifactId: slf4j-simple
       version: 1.7.25
+    HikariCP:
+      repository: https://maven.aliyun.com/repository/public
+      groupId: com.zaxxer
+      artifactId: HikariCP
+      version: 4.0.3

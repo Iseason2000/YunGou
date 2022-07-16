@@ -1,4 +1,4 @@
-package top.iseason.bukkit.yungou
+package top.iseason.bukkit.yungou.data
 
 import org.jetbrains.exposed.dao.Entity
 import org.jetbrains.exposed.dao.EntityClass
@@ -8,9 +8,8 @@ import org.jetbrains.exposed.dao.id.IdTable
 class Cargo(id: EntityID<String>) : StringEntity(id) {
     companion object : StringEntityClass<Cargo>(Cargos)
 
-    //    var name by Cargos.name
     var item by Cargos.item
-    var count by Cargos.count
+    var num by Cargos.num
     var startTime by Cargos.startTime
     var endTime by Cargos.endTime
 }
