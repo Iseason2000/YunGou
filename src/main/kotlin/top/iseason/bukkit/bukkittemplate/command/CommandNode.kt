@@ -169,9 +169,8 @@ open class CommandNode(
         var incomplete = ""
         var deep = 0
         for ((index, arg) in args.withIndex()) {
-            if (arg.isBlank()) break
-            if (args.getOrNull(index + 1) != null) return null
-            val subNode = node.getSubNode(arg, sender)
+//            if (args.getOrNull(index + 1) != null) break
+            val subNode = if (arg.isBlank()) null else node.getSubNode(arg, sender)
             if (subNode == null) {
                 incomplete = arg
                 deep = index
@@ -179,6 +178,7 @@ open class CommandNode(
             }
             node = subNode
         }
+//        println(node.name)
         val keys = node.getKeys(sender)
         if (keys.isEmpty() && node.params.isNotEmpty()) {
             val last = args.last()
@@ -207,7 +207,7 @@ open class CommandNode(
             } ?: break
             deep++
         }
-        if (node.subNodes.isNotEmpty()) {
+        if (node.subNodes.isNotEmpty() && node.onExecute == null) {
             node.showUsage(sender)
             return true
         }

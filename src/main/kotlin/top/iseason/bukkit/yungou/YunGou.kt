@@ -9,6 +9,7 @@ import top.iseason.bukkit.bukkittemplate.config.SimpleYAMLConfig
 import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkit.bukkittemplate.debug.info
 import top.iseason.bukkit.bukkittemplate.utils.toColor
+import top.iseason.bukkit.yungou.command.mainCommand
 import top.iseason.bukkit.yungou.data.Config
 
 object YunGou : KotlinPlugin() {
