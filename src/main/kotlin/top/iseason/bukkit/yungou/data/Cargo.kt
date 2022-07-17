@@ -12,6 +12,8 @@ class Cargo(id: EntityID<String>) : StringEntity(id) {
     var num by Cargos.num
     var enable by Cargos.enable
     var startTime by Cargos.startTime
+    var serial by Cargos.serial
+    var lastTime by Cargos.lastTime
     var coolDown by Cargos.coolDown
 }
 

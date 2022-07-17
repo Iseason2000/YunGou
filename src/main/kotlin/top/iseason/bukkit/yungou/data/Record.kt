@@ -10,5 +10,6 @@ class Record(id: EntityID<Int>) : IntEntity(id) {
     var uid by Records.uid
     var cargo by Cargo referencedOn Records.cargo
     var num by Records.num
+    var serial by Records.serial
     var time by Records.time
 }

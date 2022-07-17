@@ -24,3 +24,11 @@ object ItemUtil {
     fun fromByteArray(bytes: ByteArray): ItemStack =
         NBTLibraryMain.libraryApi.serializeItem.deserialize(StringUtil.unGzip(bytes))
 }
+
+fun String.formatBy(vararg values: Any): String {
+    var temp = this
+    values.forEachIndexed { index, any ->
+        temp = temp.replace("{$index}", any.toString())
+    }
+    return temp
+}

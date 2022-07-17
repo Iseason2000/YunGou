@@ -15,13 +15,18 @@ import top.iseason.bukkit.bukkittemplate.command.ParmaException
 import top.iseason.bukkit.bukkittemplate.command.commandRoot
 import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkit.bukkittemplate.debug.debug
+import top.iseason.bukkit.bukkittemplate.utils.broadcast
+import top.iseason.bukkit.bukkittemplate.utils.bukkit.giveItems
 import top.iseason.bukkit.bukkittemplate.utils.sendColorMessage
+import top.iseason.bukkit.yungou.ItemUtil
 import top.iseason.bukkit.yungou.ItemUtil.toByteArray
 import top.iseason.bukkit.yungou.data.*
+import top.iseason.bukkit.yungou.formatBy
 import java.time.LocalDateTime
 
 fun mainCommand() {
     var suggest: Collection<String>? = null
+    var lastUpdate = 0L
     fun getCargosNames() = transaction {
         return@transaction Cargos.slice(Cargos.id).selectAll().map {
             it[Cargos.id].value
@@ -34,10 +39,23 @@ fun mainCommand() {
         description = "云购命令节点"
     ) {
         node(
-            "reConnect", alias = arrayOf("重连"), default = PermissionDefault.OP, description = "重新链接数据库"
+            "debug", default = PermissionDefault.OP, description = "切换调试模式"
         ) {
             onExecute {
-                Config.reConnected()
+                SimpleLogger.isDebug = !SimpleLogger.isDebug
+                if (SimpleLogger.isDebug) {
+                    it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__debug_on}")
+                } else {
+                    it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__debug_off}")
+                }
+                true
+            }
+        }
+        node(
+            "reConnect", default = PermissionDefault.OP, description = "重新链接数据库"
+        ) {
+            onExecute {
+                Config.reConnectedDB()
                 true
             }
             onSuccess("&a配置已重载")
@@ -51,31 +69,66 @@ fun mainCommand() {
             isPlayerOnly = true,
             params = arrayOf(
                 Param("[id]"),
-                Param("<count>", suggest = listOf("20", "50", "100")),
-                Param("<coolDown>", suggest = listOf("300", "600", "1200", "3600"))
+                Param("<份数>", suggest = listOf("20", "50", "100")),
+                Param("<冷却时间>", suggest = listOf("3", "5", "10", "60"))
             )
         ) {
             onExecute {
                 val player = it as Player
                 val item = player.equipment.itemInMainHand
-                if (item == null || item.type == Material.AIR) throw ParmaException("${SimpleLogger.prefix}&c请拿着需要上架的物品")
+                if (item == null || item.type == Material.AIR) throw ParmaException(Lang.command__add_no_item)
                 val name = getParam<String>(0)
                 val count = getOptionalParam<Int>(1) ?: 1
-                val coolDown = getOptionalParam<Int>(1) ?: 1
-                if (Cargos.has(name)) throw ParmaException("${SimpleLogger.prefix}&cid已存在")
+                val coolDown = getOptionalParam<Int>(2) ?: 1
+                if (Cargos.has(name)) throw ParmaException(Lang.command__add_id_exist)
                 transaction {
                     Cargo.new(name) {
                         this.item = ExposedBlob(item.toByteArray())
                         startTime = LocalDateTime.now()
-                        this.coolDown = coolDown
+                        serial = 0
                         num = count
+                        this.coolDown = coolDown
                     }
                 }
-                suggest = getCargosNames()
-                onSuccess("${SimpleLogger.prefix}&a商品 &6$name &aX &6$count &a份 创建成功! 冷却时间: &6$coolDown &a秒")
+                onSuccess(Lang.command__add_id_success.formatBy(name, count, coolDown))
                 true
             }
 
+        }
+        node(
+            "get",
+            alias = arrayOf(""),
+            default = PermissionDefault.OP,
+            description = "获取一个云购商品",
+            async = true,
+            isPlayerOnly = true,
+            params = arrayOf(
+                Param("[id]", suggestRuntime = {
+                    val currentTimeMillis = System.currentTimeMillis()
+                    if (System.currentTimeMillis() - lastUpdate < 2000L) return@Param suggest ?: emptyList()
+                    lastUpdate = currentTimeMillis
+                    suggest = getCargosNames()
+                    suggest!!
+                })
+            )
+        ) {
+            onExecute {
+                val player = it as Player
+                val id = getParam<String>(0)
+                var itemBlob: ExposedBlob? = null
+                transaction {
+                    itemBlob = Cargos.slice(Cargos.item).select { Cargos.id eq id }.firstOrNull()?.get(Cargos.item)
+                }
+                if (itemBlob == null) {
+                    player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__get_failure.formatBy(id)}")
+                } else {
+                    player.giveItems(ItemUtil.fromByteArray(itemBlob!!.bytes))
+                    player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__get_success.formatBy(id)}")
+                }
+                true
+            }
+            onSuccess(Lang.command__remove_success)
+            onFailure(Lang.command__remove_failure)
         }
         node(
             "remove",
@@ -85,12 +138,11 @@ fun mainCommand() {
             async = true,
             params = arrayOf(
                 Param("[id]", suggestRuntime = {
-                    try {
-                        if (suggest == null) suggest = getCargosNames()
-                        return@Param suggest!!
-                    } catch (e: Exception) {
-                        return@Param emptyList()
-                    }
+                    val currentTimeMillis = System.currentTimeMillis()
+                    if (System.currentTimeMillis() - lastUpdate < 2000L) return@Param suggest ?: emptyList()
+                    lastUpdate = currentTimeMillis
+                    suggest = getCargosNames()
+                    suggest!!
                 })
             )
         ) {
@@ -100,22 +152,20 @@ fun mainCommand() {
                 transaction {
                     count = Cargos.deleteWhere { Cargos.id eq id }
                 }
-                if (count != 0) {
-                    suggest = getCargosNames()
-                    true
-                } else false
+                debug("&6删除了商品 &c$id")
+                count != 0
             }
-            onSuccess("${SimpleLogger.prefix}&a商品已删除!")
-            onFailure("${SimpleLogger.prefix}&c商品不存在!")
+            onSuccess(Lang.command__remove_success)
+            onFailure(Lang.command__remove_failure)
         }
         node(
             "buy",
             alias = arrayOf(""),
             default = PermissionDefault.OP,
-            description = "为玩家购买 count 个云购商品",
+            description = "为玩家购买 <份数> 个云购商品",
             async = true,
             params = arrayOf(
-                Param("[player]", suggestRuntime = ParamSuggestCache.playerParam),
+                Param("[玩家]", suggestRuntime = ParamSuggestCache.playerParam),
                 Param("[id]", suggestRuntime = {
                     try {
                         if (suggest == null) suggest = getCargosNames()
@@ -124,7 +174,7 @@ fun mainCommand() {
                         return@Param emptyList()
                     }
                 }),
-                Param("<count>", suggest = listOf("1", "5", "10"))
+                Param("<份数>", suggest = listOf("1", "5", "10"))
             )
         ) {
             onExecute {
@@ -133,22 +183,34 @@ fun mainCommand() {
                 val count = getOptionalParam<Int>(2) ?: 1
                 transaction {
 //                    addLogger(StdOutSqlLogger)
-                    val cargo = Cargo.findById(id) ?: throw ParmaException("${SimpleLogger.prefix}&cid不存在")
+                    val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
                     val existNum = Records.slice(Records.num.sum()).select { Records.cargo eq id }.firstOrNull()
                         ?.get(Records.num.sum()) ?: 0
-                    if (existNum + count > cargo.num) throw ParmaException("${SimpleLogger.prefix}&c商品剩余 &6${cargo.num - existNum} &c个,无法购买 &6$count &c个")
+                    val after = existNum + count
+                    if (after > cargo.num) throw ParmaException(
+                        Lang.command__buy_can_not_buy.formatBy(
+                            cargo.num - existNum,
+                            count
+                        )
+                    )
+                    else if (after == cargo.num) {
+                        //开奖
+                        broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
+                        //todo
+                    }
                     try {
                         Record.new {
                             uid = player.uniqueId
                             this.cargo = cargo
                             num = count
+                            serial = cargo.serial
                             time = LocalDateTime.now()
                         }
                     } catch (e: Exception) {
-                        player.sendColorMessage("&c购买异常，请联系管理员!")
+                        player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__buy_error}")
                         return@transaction false
                     }
-                    player.sendColorMessage("&a已购买 &6$id &aX &6$count")
+                    player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__buy_success.formatBy(id, count)}")
                     debug("&a已为 &6${player.name} &a购买 &6$id &aX &6$count")
                 }
                 true

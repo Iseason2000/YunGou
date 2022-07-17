@@ -184,10 +184,10 @@ open class CommandNode(
             val last = args.last()
             val param = node.params.getOrNull(args.size - deep - 1) ?: return null
             return (param.suggestRuntime?.invoke(sender) ?: param.suggest)?.filter {
-                it.startsWith(last)
+                it.startsWith(last, true)
             }
         }
-        return keys.filter { it.startsWith(incomplete) }
+        return keys.filter { it.startsWith(incomplete, true) }
     }
 
     override fun onCommand(sender: CommandSender, command: Command, label: String, args: Array<String>): Boolean {
@@ -220,14 +220,15 @@ open class CommandNode(
         submit(async = node.async) {
             try {
                 if (node.onExecute!!.invoke((Params(params, node)), sender)) {
-                    sender.sendColorMessage(node.successMessage)
-                } else sender.sendColorMessage(node.failureMessage)
+                    sender.sendColorMessage("${SimpleLogger.prefix}${node.successMessage}")
+                } else sender.sendColorMessage("${SimpleLogger.prefix}${node.successMessage}")
             } catch (e: ParmaException) {
                 //参数错误的提示
-                if (e.typeParam != null) sender.sendColorMessage(e.typeParam.errorMessage(e.arg))
+                if (e.typeParam != null) sender.sendColorMessage("${SimpleLogger.prefix}${e.typeParam.errorMessage(e.arg)}")
                 else {
                     node.showUsage(sender)
-                    sender.sendColorMessage(e.message)
+                    val message = e.message
+                    sender.sendColorMessage("${SimpleLogger.prefix}$message")
                 }
             }
         }

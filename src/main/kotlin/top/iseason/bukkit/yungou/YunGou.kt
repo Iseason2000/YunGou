@@ -30,7 +30,6 @@ object YunGou : KotlinPlugin() {
     override fun onAsyncEnable() {
         SimpleYAMLConfig.notifyMessage = "&7配置文件 &6%s &7已重载!"
         Config
-
     }
 
     override fun onDisable() {
@@ -41,7 +40,7 @@ object YunGou : KotlinPlugin() {
         //如果使用配置模块，取消注销
         ConfigWatcher.onDisable()
         TransactionManager.closeAndUnregister(mysql)
-        Config.ds?.close()
+        Config.closeDB()
         info("&6插件已卸载!")
     }
 

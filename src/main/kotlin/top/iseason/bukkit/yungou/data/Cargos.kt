@@ -12,8 +12,11 @@ object Cargos : StringIdTable() {
     val num = integer("num")
     val enable = bool("enable").default(true)
     val startTime = datetime("startTime")
+    val serial = integer("serial") //累计开了几次奖
+    val lastTime = datetime("lastTime").nullable() //上次开奖
     val coolDown = integer("coolDown")
 
+    //是否存在某个id的商品
     fun has(id: String): Boolean {
         return try {
             var has = false

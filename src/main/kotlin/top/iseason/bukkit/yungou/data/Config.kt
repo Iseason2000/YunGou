@@ -13,12 +13,11 @@ import top.iseason.bukkit.bukkittemplate.config.annotations.Comment
 import top.iseason.bukkit.bukkittemplate.config.annotations.FilePath
 import top.iseason.bukkit.bukkittemplate.config.annotations.Key
 import top.iseason.bukkit.bukkittemplate.debug.info
-import top.iseason.bukkit.bukkittemplate.utils.submit
 import top.iseason.bukkit.yungou.YunGou
 import java.sql.SQLException
 
 @FilePath("config.yml")
-object Config : SimpleYAMLConfig(isAutoUpdate = false) {
+object Config : SimpleYAMLConfig() {
 
     @Comment("mysql地址")
     @Key
@@ -36,48 +35,66 @@ object Config : SimpleYAMLConfig(isAutoUpdate = false) {
     @Key
     var password = "password"
 
+    @Comment("", "开奖倒计时，单位秒")
+    @Key
+    var countdown = 30
+
+    @Comment("", "开奖后的购买冷却，单位分钟")
+    @Key
+    var coolDown = 30
+
+    var isInit = false
     override val onLoaded: FileConfiguration.() -> Unit = {
-        reConnected()
+        if (!isInit) {
+            reConnectedDB()
+            isInit = true
+        }
     }
     override val onSaved: (FileConfiguration.() -> Unit) = {
+
     }
-    var ds: HikariDataSource? = null
-    fun reConnected() {
-        info("&6数据库链接中...")
-        submit(async = true) {
-            try {
-                try {
-                    ds?.close()
-                    TransactionManager.closeAndUnregister(YunGou.mysql)
-                } catch (_: Exception) {
-                }
-                val config = HikariConfig().apply {
-                    jdbcUrl = "jdbc:mysql://$url?charactorEncoding=utf-8mb4"
-                    driverClassName = "com.mysql.cj.jdbc.Driver"
-                    username = user
-                    password = Config.password
-                    maximumPoolSize = 10
-                    addDataSourceProperty("cachePrepStmts", "true")
-                    addDataSourceProperty("prepStmtCacheSize", "250")
-                    addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
-                    poolName = "云购"
-                }
-                val schema = Schema(dbName)
-                ds = HikariDataSource(config)
-                YunGou.mysql = Database.connect(ds!!)
-                transaction {
-//                    addLogger(StdOutSqlLogger)
-                    SchemaUtils.createSchema(schema)
-                    SchemaUtils.setSchema(schema)
-                    SchemaUtils.create(Cargos, Records)
-                }
-                info("&a数据库链接成功!")
-            } catch (e: Exception) {
-                info("&c数据库链接失败!")
-            } catch (e: SQLException) {
-                info("&c数据库链接失败!")
-            }
+
+    private var ds: HikariDataSource? = null
+
+    fun closeDB() {
+        try {
+            ds?.close()
+            TransactionManager.closeAndUnregister(YunGou.mysql)
+        } catch (_: Exception) {
         }
+    }
+
+    fun reConnectedDB() {
+        info("&6数据库链接中...")
+        try {
+            closeDB()
+            val config = HikariConfig().apply {
+                jdbcUrl = "jdbc:mysql://$url?charactorEncoding=utf-8mb4"
+                driverClassName = "com.mysql.cj.jdbc.Driver"
+                username = user
+                password = Config.password
+                maximumPoolSize = 10
+                addDataSourceProperty("cachePrepStmts", "true")
+                addDataSourceProperty("prepStmtCacheSize", "250")
+                addDataSourceProperty("prepStmtCacheSqlLimit", "2048")
+                poolName = "云购"
+            }
+            val schema = Schema(dbName)
+            ds = HikariDataSource(config)
+            YunGou.mysql = Database.connect(ds!!)
+            transaction {
+//                    addLogger(StdOutSqlLogger)
+                SchemaUtils.createSchema(schema)
+                SchemaUtils.setSchema(schema)
+                SchemaUtils.create(Cargos, Records)
+            }
+            info("&a数据库链接成功!")
+        } catch (e: Exception) {
+            info("&c数据库链接失败!")
+        } catch (e: SQLException) {
+            info("&c数据库链接失败!")
+        }
+
     }
 
 }

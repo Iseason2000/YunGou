@@ -68,7 +68,14 @@ abstract class SimpleYAMLConfig(
                 if (Modifier.isFinal(it.modifiers)) {
                     return@forEach
                 }
-                list.add(ConfigKey(it.name.replace("__", ".").replace('_', '-'), it, null))
+                val comments = mutableListOf<String>()
+                it.getAnnotationsByType(Comment::class.java).forEach { an ->
+                    //注释内容遍历
+                    an.value.forEach { value ->
+                        comments.add(value)
+                    }
+                }
+                list.add(ConfigKey(it.name.replace("__", ".").replace('_', '-'), it, comments))
             }
             return@also
         }
