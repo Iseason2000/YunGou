@@ -220,14 +220,15 @@ open class CommandNode(
         submit(async = node.async) {
             try {
                 if (node.onExecute!!.invoke((Params(params, node)), sender)) {
-                    sender.sendColorMessage("${SimpleLogger.prefix}${node.successMessage}")
-                } else sender.sendColorMessage("${SimpleLogger.prefix}${node.successMessage}")
+                    if (node.successMessage != null)
+                        sender.sendColorMessage("${SimpleLogger.prefix}${node.successMessage}")
+                } else if (node.failureMessage != null) sender.sendColorMessage("${SimpleLogger.prefix}${node.failureMessage}")
             } catch (e: ParmaException) {
                 //参数错误的提示
                 if (e.typeParam != null) sender.sendColorMessage("${SimpleLogger.prefix}${e.typeParam.errorMessage(e.arg)}")
                 else {
                     node.showUsage(sender)
-                    val message = e.message
+                    val message = e.message ?: return@submit
                     sender.sendColorMessage("${SimpleLogger.prefix}$message")
                 }
             }

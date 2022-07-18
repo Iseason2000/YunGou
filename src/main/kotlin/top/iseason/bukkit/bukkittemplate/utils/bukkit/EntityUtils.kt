@@ -39,3 +39,15 @@ fun InventoryHolder.giveItems(vararg itemStacks: ItemStack) {
         (world.spawnEntity(location, EntityType.DROPPED_ITEM) as Item).itemStack = addItem
     }
 }
+
+/**
+ * 给予玩家物品，成功返回true，否则返回false
+ */
+fun InventoryHolder.giveItem(itemStacks: ItemStack): Boolean {
+    val addItems = inventory.addItem(itemStacks).values
+    for (addItem in addItems) {
+        if (addItem != null)
+            return false
+    }
+    return true
+}

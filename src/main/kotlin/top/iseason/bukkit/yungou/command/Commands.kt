@@ -3,11 +3,9 @@ package top.iseason.bukkit.yungou.command
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.permissions.PermissionDefault
-import org.jetbrains.exposed.sql.deleteWhere
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.selectAll
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
-import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import top.iseason.bukkit.bukkittemplate.command.Param
 import top.iseason.bukkit.bukkittemplate.command.ParamSuggestCache
@@ -15,10 +13,9 @@ import top.iseason.bukkit.bukkittemplate.command.ParmaException
 import top.iseason.bukkit.bukkittemplate.command.commandRoot
 import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkit.bukkittemplate.debug.debug
+import top.iseason.bukkit.bukkittemplate.utils.EasyCoolDown
 import top.iseason.bukkit.bukkittemplate.utils.broadcast
-import top.iseason.bukkit.bukkittemplate.utils.bukkit.giveItems
 import top.iseason.bukkit.bukkittemplate.utils.sendColorMessage
-import top.iseason.bukkit.yungou.ItemUtil
 import top.iseason.bukkit.yungou.ItemUtil.toByteArray
 import top.iseason.bukkit.yungou.data.*
 import top.iseason.bukkit.yungou.formatBy
@@ -35,7 +32,6 @@ fun mainCommand() {
     commandRoot(
         "yungou",
         alias = arrayOf("yg"),
-        default = PermissionDefault.OP,
         description = "云购命令节点"
     ) {
         node(
@@ -58,7 +54,6 @@ fun mainCommand() {
                 Config.reConnectedDB()
                 true
             }
-            onSuccess("&a配置已重载")
         }
         node(
             "add",
@@ -98,43 +93,45 @@ fun mainCommand() {
         node(
             "get",
             alias = arrayOf(""),
-            default = PermissionDefault.OP,
-            description = "获取一个云购商品",
+            description = "领取一个云购商品",
             async = true,
             isPlayerOnly = true,
             params = arrayOf(
                 Param("[id]", suggestRuntime = {
-                    val currentTimeMillis = System.currentTimeMillis()
-                    if (System.currentTimeMillis() - lastUpdate < 2000L) return@Param suggest ?: emptyList()
-                    lastUpdate = currentTimeMillis
-                    suggest = getCargosNames()
-                    suggest!!
+                    val player = (this as? Player) ?: return@Param emptyList()
+                    if (EasyCoolDown.check(player, 2000L)) {
+                        return@Param emptyList()
+                    }
+                    var result: List<String>? = null
+                    transaction {
+                        result = Lotteries.slice(Lotteries.cargo)
+                            .select { Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false) }.map {
+                                it[Lotteries.cargo].value
+                            }
+                    }
+                    result ?: emptyList()
                 })
             )
         ) {
             onExecute {
                 val player = it as Player
                 val id = getParam<String>(0)
-                var itemBlob: ExposedBlob? = null
                 transaction {
-                    itemBlob = Cargos.slice(Cargos.item).select { Cargos.id eq id }.firstOrNull()?.get(Cargos.item)
-                }
-                if (itemBlob == null) {
-                    player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__get_failure.formatBy(id)}")
-                } else {
-                    player.giveItems(ItemUtil.fromByteArray(itemBlob!!.bytes))
-                    player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__get_success.formatBy(id)}")
+                    addLogger(StdOutSqlLogger)
+                    val firstOrNull = Lottery.find(
+                        Lotteries.uid eq player.uniqueId and (Lotteries.cargo eq id) and (Lotteries.hasReceive eq false)
+                    ).limit(1).firstOrNull() ?: throw ParmaException(Lang.command__get_failure.formatBy(id))
+                    onSuccess(Lang.command__get_success.formatBy(id))
+                    firstOrNull.offeringPrizes()
                 }
                 true
             }
-            onSuccess(Lang.command__remove_success)
-            onFailure(Lang.command__remove_failure)
         }
         node(
             "remove",
             alias = arrayOf(""),
             default = PermissionDefault.OP,
-            description = "删除一个云购商品",
+            description = "删除一个云购商品,同时删除所有有关记录",
             async = true,
             params = arrayOf(
                 Param("[id]", suggestRuntime = {
@@ -184,6 +181,8 @@ fun mainCommand() {
                 transaction {
 //                    addLogger(StdOutSqlLogger)
                     val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
+                    if (!cargo.enable) throw ParmaException(Lang.command__buy_not_enable.formatBy(id))
+                    if (cargo.isCoolDown()) throw ParmaException(Lang.command__buy_is_cooldown.formatBy(id))
                     val existNum = Records.slice(Records.num.sum()).select { Records.cargo eq id }.firstOrNull()
                         ?.get(Records.num.sum()) ?: 0
                     val after = existNum + count
@@ -193,11 +192,6 @@ fun mainCommand() {
                             count
                         )
                     )
-                    else if (after == cargo.num) {
-                        //开奖
-                        broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
-                        //todo
-                    }
                     try {
                         Record.new {
                             uid = player.uniqueId
@@ -212,10 +206,39 @@ fun mainCommand() {
                     }
                     player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__buy_success.formatBy(id, count)}")
                     debug("&a已为 &6${player.name} &a购买 &6$id &aX &6$count")
+                    if (after == cargo.num) {
+                        //开奖
+                        broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
+                        Lotteries.drawLottery(id)
+                    }
+                    debug("&6$id &a已开奖")
                 }
                 true
             }
         }
+        node(
+            "force",
+            alias = arrayOf(""),
+            default = PermissionDefault.OP,
+            description = "强制开启倒计时",
+            async = true,
+            params = arrayOf(
+                Param("[id]", suggestRuntime = {
+                    val currentTimeMillis = System.currentTimeMillis()
+                    if (System.currentTimeMillis() - lastUpdate < 2000L) return@Param suggest ?: emptyList()
+                    lastUpdate = currentTimeMillis
+                    suggest = getCargosNames()
+                    suggest!!
+                })
+            )
+        ) {
+            onExecute {
+                val id = getParam<String>(0)
+                broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
+                Lotteries.drawLottery(id)
+                debug("&6强制开启了商品 &c$id")
+                true
+            }
+        }
     }
-
 }

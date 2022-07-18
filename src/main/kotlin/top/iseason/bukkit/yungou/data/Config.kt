@@ -39,10 +39,6 @@ object Config : SimpleYAMLConfig() {
     @Key
     var countdown = 30
 
-    @Comment("", "开奖后的购买冷却，单位分钟")
-    @Key
-    var coolDown = 30
-
     var isInit = false
     override val onLoaded: FileConfiguration.() -> Unit = {
         if (!isInit) {
@@ -86,7 +82,7 @@ object Config : SimpleYAMLConfig() {
 //                    addLogger(StdOutSqlLogger)
                 SchemaUtils.createSchema(schema)
                 SchemaUtils.setSchema(schema)
-                SchemaUtils.create(Cargos, Records)
+                SchemaUtils.create(Cargos, Records, Lotteries)
             }
             info("&a数据库链接成功!")
         } catch (e: Exception) {

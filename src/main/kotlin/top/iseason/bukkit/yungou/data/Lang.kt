@@ -13,6 +13,11 @@ object Lang : SimpleYAMLConfig() {
     @Comment("消息前缀")
     var prefix = "&6[&a云购&6]&r "
 
+    var receive_success = "&a奖励 &6{0} &a已发放到你的背包"
+    var receive_not_found = "&a你没有这个奖励"
+    var receive_broadcast = "&a恭喜玩家 &6{0} &a获得 &6{1}"
+    var receive_inventory_full = "&6你的背包空间不足，无法领取奖励 &a{0} &6 ,请腾出空间后输入/yungou get {0} 领取"
+
     @Comment("", "命令消息")
     var command = ""
     var command__debug_on = "&a调试模式已开启!"
@@ -27,10 +32,14 @@ object Lang : SimpleYAMLConfig() {
     var command__remove_failure = "&c商品不存在!"
 
     var command__buy_id_unexist = "&cid不存在"
+    var command__buy_not_enable = "&c商品 &6{0} &c未开售"
+    var command__buy_is_cooldown = "&c商品 &6{0} &c冷却中"
     var command__buy_can_not_buy = "&c商品剩余 &6{0} &c个,无法购买 &6{1} &c个"
-    var command__buy_start = "&a商品 &6{0} &a已售完,将在&6 {1} &7秒后开奖"
+    var command__buy_start = "&a商品 &6{0} &a已售完,将在&6 {1} &a秒后开奖"
     var command__buy_error = "&c购买异常，请联系管理员!"
     var command__buy_success = "&a已购买 &6{0} &aX &6{1}"
+
+
     override val onLoaded: FileConfiguration.() -> Unit = {
         SimpleLogger.prefix = prefix
     }
