@@ -69,6 +69,7 @@ fun mainCommand() {
             )
         ) {
             onExecute {
+                if (!Config.isConnected) return@onExecute true
                 val player = it as Player
                 val item = player.equipment.itemInMainHand
                 if (item == null || item.type == Material.AIR) throw ParmaException(Lang.command__add_no_item)
@@ -89,6 +90,38 @@ fun mainCommand() {
                 true
             }
 
+        }
+        node(
+            "show",
+            alias = arrayOf(""),
+            description = "展示一个云购商品的信息",
+            async = true,
+            params = arrayOf(
+                Param("[id]", suggestRuntime = {
+                    val currentTimeMillis = System.currentTimeMillis()
+                    if (System.currentTimeMillis() - lastUpdate < 2000L) return@Param suggest ?: emptyList()
+                    lastUpdate = currentTimeMillis
+                    suggest = getCargosNames()
+                    suggest!!
+                })
+            )
+        ) {
+            onExecute {
+                if (!Config.isConnected) return@onExecute true
+                val id = getParam<String>(0)
+                var cargo: Cargo? = null
+                transaction {
+                    cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__show_id_not_exist)
+                }
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_id.formatBy(cargo!!.id)}")
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_num.formatBy(cargo!!.num)}")
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_enable.formatBy(cargo!!.enable)}")
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_time.formatBy(cargo!!.startTime)}")
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_serial.formatBy(cargo!!.serial)}")
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_lastTime.formatBy(cargo!!.lastTime.toString())}")
+                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_cooldown.formatBy(cargo!!.coolDown)}")
+                true
+            }
         }
         node(
             "get",
@@ -114,15 +147,44 @@ fun mainCommand() {
             )
         ) {
             onExecute {
+                if (!Config.isConnected) return@onExecute true
                 val player = it as Player
                 val id = getParam<String>(0)
                 transaction {
-                    addLogger(StdOutSqlLogger)
+//                    addLogger(StdOutSqlLogger)
                     val firstOrNull = Lottery.find(
                         Lotteries.uid eq player.uniqueId and (Lotteries.cargo eq id) and (Lotteries.hasReceive eq false)
                     ).limit(1).firstOrNull() ?: throw ParmaException(Lang.command__get_failure.formatBy(id))
-                    onSuccess(Lang.command__get_success.formatBy(id))
+//                    onSuccess(Lang.command__get_success.formatBy(id))
                     firstOrNull.offeringPrizes()
+                }
+                true
+            }
+        }
+
+        node(
+            "list",
+            alias = arrayOf(""),
+            description = "列出中奖的商品",
+            async = true,
+            isPlayerOnly = true
+        ) {
+            onExecute { sender ->
+                if (!Config.isConnected) return@onExecute true
+                val player = sender as Player
+                player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__list_head}")
+                transaction {
+                    Lotteries.slice(Lotteries.cargo, Lotteries.serial)
+                        .select { Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false) }.forEach {
+                            player.sendColorMessage(
+                                "${SimpleLogger.prefix}${
+                                    Lang.command__list_body.formatBy(
+                                        it[Lotteries.cargo].value,
+                                        it[Lotteries.serial]
+                                    )
+                                }"
+                            )
+                        }
                 }
                 true
             }
@@ -144,6 +206,7 @@ fun mainCommand() {
             )
         ) {
             onExecute {
+                if (!Config.isConnected) return@onExecute true
                 val id = getParam<String>(0)
                 var count = 0
                 transaction {
@@ -175,15 +238,18 @@ fun mainCommand() {
             )
         ) {
             onExecute {
+                if (!Config.isConnected) return@onExecute true
                 val player = getParam<Player>(0)
                 val id = getParam<String>(1)
                 val count = getOptionalParam<Int>(2) ?: 1
+                if (count <= 0) throw ParmaException("&c请输入大于0的份数")
                 transaction {
 //                    addLogger(StdOutSqlLogger)
                     val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
                     if (!cargo.enable) throw ParmaException(Lang.command__buy_not_enable.formatBy(id))
                     if (cargo.isCoolDown()) throw ParmaException(Lang.command__buy_is_cooldown.formatBy(id))
-                    val existNum = Records.slice(Records.num.sum()).select { Records.cargo eq id }.firstOrNull()
+                    val existNum = Records.slice(Records.num.sum())
+                        .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
                         ?.get(Records.num.sum()) ?: 0
                     val after = existNum + count
                     if (after > cargo.num) throw ParmaException(
@@ -210,8 +276,9 @@ fun mainCommand() {
                         //开奖
                         broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
                         Lotteries.drawLottery(id)
+                        debug("&6$id &a已开奖")
                     }
-                    debug("&6$id &a已开奖")
+                    Unit
                 }
                 true
             }
@@ -233,10 +300,41 @@ fun mainCommand() {
             )
         ) {
             onExecute {
+                if (!Config.isConnected) return@onExecute true
                 val id = getParam<String>(0)
+                if (Lotteries.drawLottery(id) == null) {
+                    it.sendColorMessage("${SimpleLogger.prefix}&c没有人购买这一期的商品")
+                    return@onExecute true
+                }
                 broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
-                Lotteries.drawLottery(id)
+                it.sendColorMessage("${SimpleLogger.prefix}&a强制开启成功")
                 debug("&6强制开启了商品 &c$id")
+                true
+            }
+        }
+        node(
+            "toggle",
+            alias = arrayOf(""),
+            default = PermissionDefault.OP,
+            description = "切换商品开启状态",
+            async = true,
+            params = arrayOf(
+                Param("[id]", suggestRuntime = {
+                    val currentTimeMillis = System.currentTimeMillis()
+                    if (System.currentTimeMillis() - lastUpdate < 2000L) return@Param suggest ?: emptyList()
+                    lastUpdate = currentTimeMillis
+                    suggest = getCargosNames()
+                    suggest!!
+                })
+            )
+        ) {
+            onExecute {
+                val id = getParam<String>(0)
+                transaction {
+                    val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
+                    cargo.enable = !cargo.enable
+                    it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__toogle.formatBy(cargo.enable)}")
+                }
                 true
             }
         }

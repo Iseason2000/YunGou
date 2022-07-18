@@ -3,6 +3,7 @@ package top.iseason.bukkit.yungou.data
 import org.bukkit.Bukkit
 import org.jetbrains.exposed.dao.id.IntIdTable
 import org.jetbrains.exposed.sql.ReferenceOption
+import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
@@ -34,7 +35,8 @@ object Lotteries : IntIdTable() {
 //                addLogger(StdOutSqlLogger)
             cargo = Cargo.findById(id)!!
             val list =
-                Records.slice(Records.uid, Records.num.sum()).select { Records.cargo eq id }.groupBy(Records.uid)
+                Records.slice(Records.uid, Records.num.sum())
+                    .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.groupBy(Records.uid)
             if (list.empty()) {
                 return@transaction
             }

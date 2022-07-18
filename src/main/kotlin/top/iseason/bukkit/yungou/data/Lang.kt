@@ -18,6 +18,8 @@ object Lang : SimpleYAMLConfig() {
     var receive_broadcast = "&a恭喜玩家 &6{0} &a获得 &6{1}"
     var receive_inventory_full = "&6你的背包空间不足，无法领取奖励 &a{0} &6 ,请腾出空间后输入/yungou get {0} 领取"
 
+    var player_login = "&7你有 &6{0} &7个奖励未领取，请输入&6/yungou get [id] &7领取"
+
     @Comment("", "命令消息")
     var command = ""
     var command__debug_on = "&a调试模式已开启!"
@@ -26,8 +28,21 @@ object Lang : SimpleYAMLConfig() {
     var command__add_no_item = "&c请拿着需要上架的物品"
     var command__add_id_exist = "&cid已存在"
     var command__add_id_success = "&a商品 &6{0} &aX &6{1} &a份 创建成功! 冷却时间: &6{2} &a分钟"
-    var command__get_success = "&a已获得商品&6 {0}"
+
+    var command__show_id_not_exist = "&cid不存在"
+    var command__show_id = "&7商品ID: &6{0}"
+    var command__show_num = "&7商品份数: &6{0}"
+    var command__show_enable = "&7开启状态: &6{0}"
+    var command__show_time = "&7上架时间: &6{0}"
+    var command__show_serial = "&7商品期号: &6{0}"
+    var command__show_lastTime = "&7上次开奖: &6{0}"
+    var command__show_cooldown = "&7冷却时间: &6{0} 分钟"
+
     var command__get_failure = "&6商品ID &a{0} 不存在"
+
+    var command__list_head = "&7你的获奖商品有:"
+    var command__list_body = "&6商品: {0} 第 {1} 期"
+
     var command__remove_success = "&a商品已删除!"
     var command__remove_failure = "&c商品不存在!"
 
@@ -39,6 +54,7 @@ object Lang : SimpleYAMLConfig() {
     var command__buy_error = "&c购买异常，请联系管理员!"
     var command__buy_success = "&a已购买 &6{0} &aX &6{1}"
 
+    var command__toogle = "&a商品当前状态为: &6{0}"
 
     override val onLoaded: FileConfiguration.() -> Unit = {
         SimpleLogger.prefix = prefix

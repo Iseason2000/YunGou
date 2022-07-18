@@ -39,6 +39,8 @@ object Config : SimpleYAMLConfig() {
     @Key
     var countdown = 30
 
+    var isConnected = false
+
     var isInit = false
     override val onLoaded: FileConfiguration.() -> Unit = {
         if (!isInit) {
@@ -61,6 +63,7 @@ object Config : SimpleYAMLConfig() {
     }
 
     fun reConnectedDB() {
+        isConnected = false
         info("&6数据库链接中...")
         try {
             closeDB()
@@ -84,6 +87,7 @@ object Config : SimpleYAMLConfig() {
                 SchemaUtils.setSchema(schema)
                 SchemaUtils.create(Cargos, Records, Lotteries)
             }
+            isConnected = true
             info("&a数据库链接成功!")
         } catch (e: Exception) {
             info("&c数据库链接失败!")

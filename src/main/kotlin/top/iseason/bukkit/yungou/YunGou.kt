@@ -29,6 +29,7 @@ object YunGou : KotlinPlugin() {
 
     override fun onAsyncEnable() {
         SimpleYAMLConfig.notifyMessage = "&7配置文件 &6%s &7已重载!"
+        registerListeners(PlayerListener)
         Config
     }
 
