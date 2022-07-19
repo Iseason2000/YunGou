@@ -56,6 +56,8 @@ object Lang : SimpleYAMLConfig() {
 
     var command__toogle = "&a商品当前状态为: &6{0}"
 
+    var placeholder__no_record = "没有记录"
+    var placeholder__record = "玩家 {0} 获得了{1} 第 {2} 期 时间 {3}"
     override val onLoaded: FileConfiguration.() -> Unit = {
         SimpleLogger.prefix = prefix
     }

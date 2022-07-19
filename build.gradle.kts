@@ -47,6 +47,10 @@ repositories {
         name = "jitpack"
         url = uri("https://jitpack.io")
     }
+    maven {
+        name = "placeholderapi"
+        url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")
+    }
 
 }
 
@@ -67,6 +71,7 @@ dependencies {
     compileOnly("com.zaxxer:HikariCP:4.0.3")
     implementation("org.bstats:bstats-bukkit:3.0.0")
     compileOnly("org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT")
+    compileOnly("me.clip:placeholderapi:2.11.2")
     compileOnly(fileTree("libs"))
 }
 

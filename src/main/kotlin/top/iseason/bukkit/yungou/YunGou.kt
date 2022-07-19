@@ -11,6 +11,7 @@ import top.iseason.bukkit.bukkittemplate.debug.info
 import top.iseason.bukkit.bukkittemplate.utils.toColor
 import top.iseason.bukkit.yungou.command.mainCommand
 import top.iseason.bukkit.yungou.data.Config
+import top.iseason.bukkit.yungou.placeholders.PAPI
 
 object YunGou : KotlinPlugin() {
 
@@ -31,17 +32,22 @@ object YunGou : KotlinPlugin() {
         SimpleYAMLConfig.notifyMessage = "&7配置文件 &6%s &7已重载!"
         registerListeners(PlayerListener)
         Config
+        PAPI.register()
+        try {
+            javaPlugin.saveResource("placeholder.yml", true)
+        } catch (_: Exception) {
+        }
     }
 
     override fun onDisable() {
-
+        Config.closeDB()
         //如果使用命令模块，取消注释
         CommandBuilder.onDisable()
 
         //如果使用配置模块，取消注销
         ConfigWatcher.onDisable()
         TransactionManager.closeAndUnregister(mysql)
-        Config.closeDB()
+        PAPI.unregister()
         info("&6插件已卸载!")
     }
 
