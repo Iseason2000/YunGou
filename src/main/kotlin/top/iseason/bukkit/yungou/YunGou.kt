@@ -43,7 +43,6 @@ object YunGou : KotlinPlugin() {
         Config.closeDB()
         //如果使用命令模块，取消注释
         CommandBuilder.onDisable()
-
         //如果使用配置模块，取消注销
         ConfigWatcher.onDisable()
         TransactionManager.closeAndUnregister(mysql)

@@ -61,11 +61,17 @@ runtime-libraries:
       groupId: org.jetbrains.exposed
       artifactId: exposed-java-time
       version: ${exposedVersion}
-    mysql-connector:
-      repository: https://maven.aliyun.com/repository/public
-      groupId: mysql
-      artifactId: mysql-connector-java
-      version: 8.0.29
+
+    #    mysql-connector:
+    #      repository: https://maven.aliyun.com/repository/public
+    #      groupId: mysql
+    #      artifactId: mysql-connector-java
+    #      version: 8.0.29
+    #    sqlite-jdbc:
+    #      repository: https://maven.aliyun.com/repository/public
+    #      groupId: org.xerial
+    #      artifactId: sqlite-jdbc
+    #      version: 3.36.0.3
     slf4j-api:
       repository: https://maven.aliyun.com/repository/public
       groupId: org.slf4j
