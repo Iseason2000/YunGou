@@ -23,7 +23,7 @@ object YunGou : KotlinPlugin() {
     override fun onEnable() {
         //如果使用命令模块，取消注释
         CommandBuilder.onEnable()
-
+        PAPI.register()
         SimpleLogger.prefix = "&a[&6${javaPlugin.description.name}&a]&r ".toColor()
         info("&a插件已启用!")
     }
@@ -32,7 +32,6 @@ object YunGou : KotlinPlugin() {
         SimpleYAMLConfig.notifyMessage = "&7配置文件 &6%s &7已重载!"
         registerListeners(PlayerListener)
         Config
-        PAPI.register()
         try {
             javaPlugin.saveResource("placeholder.yml", true)
         } catch (_: Exception) {

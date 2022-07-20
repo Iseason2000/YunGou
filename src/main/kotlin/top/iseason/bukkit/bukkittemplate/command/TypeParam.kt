@@ -85,6 +85,8 @@ private fun setDefaultParams() {
         }
     }
     TypeParam(String::class) { it }
+
+
     TypeParam(
         PotionEffectType::class,
         { "&c${it} &7不是一个有效的药水种类" }

@@ -13,7 +13,7 @@ yungou_cargo_[id]_cooldown: 冷却分钟数
 yungou_cargo_[id]_cooldownremain: 剩余冷却分钟数
 
 # 开奖记录 [id] 替换为商品的id,<num>表示大于等于0的整数,不输入默认为3
-# 默认格式 玩家 Iceason 获得了测试 第 0 期 时间 2022-07-18T23:27:46.590，可在lang.yml中修改
+# 默认格式 玩家 Iceason 获得了 测试 第 0 期 时间 2022-07-18T23:27:46.590，可在lang.yml中修改
 # 举例 yungou_lottery_test 表示 id 为test 的商品的最近
 yungou_lottery_[id]_[count]: 某个ID的商品的最近第 [count] 个记录
 yungou_lottery_*_[count]: 所有商品的最近第 [count] 个记录

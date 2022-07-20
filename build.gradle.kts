@@ -48,6 +48,10 @@ repositories {
         url = uri("https://jitpack.io")
     }
     maven {
+        name = "codemc-repo"
+        url = uri("https://repo.codemc.org/repository/maven-public/")
+    }
+    maven {
         name = "placeholderapi"
         url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/")
     }
@@ -69,6 +73,7 @@ dependencies {
     compileOnly("org.jetbrains.exposed:exposed-java-time:$exposedVersion")
 //    compileOnly("mysql:mysql-connector-java:8.0.29")
 //    compileOnly("org.xerial:sqlite-jdbc:3.36.0.3")
+    compileOnly("de.tr7zw:item-nbt-api-plugin:2.10.0")
     compileOnly("com.zaxxer:HikariCP:4.0.3")
     implementation("org.bstats:bstats-bukkit:3.0.0")
     compileOnly("org.spigotmc:spigot-api:1.12-R0.1-SNAPSHOT")

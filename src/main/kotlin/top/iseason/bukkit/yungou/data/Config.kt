@@ -15,6 +15,7 @@ import top.iseason.bukkit.bukkittemplate.config.annotations.Key
 import top.iseason.bukkit.bukkittemplate.debug.info
 import top.iseason.bukkit.bukkittemplate.dependency.DependencyLoader
 import top.iseason.bukkit.yungou.YunGou
+import java.io.File
 import java.sql.SQLException
 
 @FilePath("config.yml")
@@ -22,11 +23,11 @@ object Config : SimpleYAMLConfig() {
 
     @Comment("数据库类型:支持 MySQL、MariaDB、SQLite、H2、Oracle、PostgreSQL、SQLServer")
     @Key
-    var dbType = "MySQL"
+    var dbType = "SQLite"
 
     @Comment("数据库地址")
     @Key
-    var url = "localhost:3306"
+    var url = File(YunGou.javaPlugin.dataFolder, "yungou.db").absoluteFile.toString()
 
     @Comment("", "数据库名")
     @Key
@@ -129,8 +130,8 @@ object Config : SimpleYAMLConfig() {
                     username = user
                     password = Config.password
                 }
-                else -> null
-            } ?: throw Exception("错误的数据库类型!")
+                else -> throw Exception("错误的数据库类型!")
+            }
             with(config) {
                 maximumPoolSize = 10
                 addDataSourceProperty("cachePrepStmts", "true")
