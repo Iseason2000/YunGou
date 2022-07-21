@@ -13,7 +13,7 @@ import top.iseason.bukkit.bukkittemplate.config.annotations.Comment
 import top.iseason.bukkit.bukkittemplate.config.annotations.FilePath
 import top.iseason.bukkit.bukkittemplate.config.annotations.Key
 import top.iseason.bukkit.bukkittemplate.debug.info
-import top.iseason.bukkit.bukkittemplate.dependency.DependencyLoader
+import top.iseason.bukkit.bukkittemplate.dependency.DependencyDownloader
 import top.iseason.bukkit.yungou.YunGou
 import java.io.File
 import java.sql.SQLException
@@ -73,58 +73,43 @@ object Config : SimpleYAMLConfig() {
         info("&6数据库链接中...")
         try {
             closeDB()
+            val dd = DependencyDownloader()
+            dd.repositories.clear()
+            dd.addRepository("https://maven.aliyun.com/repository/public")
             val config = when (dbType) {
                 "SQLite" -> HikariConfig().apply {
-                    DependencyLoader.builder().repository("https://maven.aliyun.com/repository/public")
-                        .groupId("org.xerial")
-                        .artifactId("sqlite-jdbc")
-                        .version("3.36.0.3").build().load()
+                    dd.downloadDependency("org.xerial:sqlite-jdbc:3.36.0.3")
                     jdbcUrl = "jdbc:sqlite:$url"
                     driverClassName = "org.sqlite.JDBC"
                 }
                 "H2" -> HikariConfig().apply {
-                    DependencyLoader.builder().repository("https://maven.aliyun.com/repository/public")
-                        .groupId("com.h2database")
-                        .artifactId("h2")
-                        .version("2.1.214").build().load()
+                    dd.downloadDependency("com.h2database:h2:2.1.214")
                     jdbcUrl = "jdbc:h2:$url"
                     driverClassName = "org.h2.Driver"
                 }
                 "PostgreSQL" -> HikariConfig().apply {
-                    DependencyLoader.builder().repository("https://maven.aliyun.com/repository/public")
-                        .groupId("com.impossibl.pgjdbc-ng")
-                        .artifactId("pgjdbc-ng")
-                        .version("0.8.9").build().load()
+                    dd.downloadDependency("com.impossibl.pgjdbc-ng:pgjdbc-ng:0.8.9")
                     jdbcUrl = "jdbc:postgresql://$url"
                     driverClassName = "com.impossibl.postgres.jdbc.PGDriver"
                     username = user
                     password = Config.password
                 }
                 "Oracle" -> HikariConfig().apply {
-                    DependencyLoader.builder().repository("https://maven.aliyun.com/repository/public")
-                        .groupId("com.oracle.database.jdbc")
-                        .artifactId("ojdbc8")
-                        .version("21.6.0.0.1").build().load()
+                    dd.downloadDependency("com.oracle.database.jdbc:ojdbc8:21.6.0.0.1")
                     jdbcUrl = "dbc:oracle:thin:@//$url"
                     driverClassName = "oracle.jdbc.OracleDriver"
                     username = user
                     password = Config.password
                 }
                 "SQLServer" -> HikariConfig().apply {
-                    DependencyLoader.builder().repository("https://maven.aliyun.com/repository/public")
-                        .groupId("com.microsoft.sqlserver")
-                        .artifactId("mssql-jdbc")
-                        .version("10.2.1.jre8").build().load()
+                    dd.downloadDependency("com.microsoft.sqlserver:mssql-jdbc:10.2.1.jre8")
                     jdbcUrl = "jdbc:sqlserver://$url"
                     driverClassName = "com.microsoft.sqlserver.jdbc.SQLServerDriver"
                     username = user
                     password = Config.password
                 }
                 "MySQL", "MariaDB" -> HikariConfig().apply {
-                    DependencyLoader.builder().repository("https://maven.aliyun.com/repository/public")
-                        .groupId("mysql")
-                        .artifactId("mysql-connector-java")
-                        .version("8.0.29").build().load()
+                    dd.downloadDependency("mysql:mysql-connector-java:8.0.29")
                     jdbcUrl = "jdbc:mysql://$url?charactorEncoding=utf-8mb4"
                     driverClassName = "com.mysql.cj.jdbc.Driver"
                     username = user

@@ -14,7 +14,6 @@ object Lang : SimpleYAMLConfig() {
     var prefix = "&6[&a云购&6]&r "
 
     var receive_success = "&a奖励 &6{0} &a已发放到你的背包"
-    var receive_not_found = "&a你没有这个奖励"
     var receive_broadcast = "&a恭喜玩家 &6{0} &a获得 &6{1}"
     var receive_inventory_full = "&6你的背包空间不足，无法领取奖励 &a{0} &6 ,请腾出空间后输入/yungou get {0} 领取"
 
