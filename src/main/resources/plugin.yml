@@ -11,6 +11,8 @@ runtime-libraries:
   libraries-folder: 'libraries'
   repositories:
     - https://maven.aliyun.com/repository/public/
+    - https://mirrors.cloud.tencent.com/nexus/repository/maven-public/
+    - https://repo.huaweicloud.com/repository/maven/
     - https://repo.maven.apache.org/maven2/
   libraries:
     - org.jetbrains.kotlin:kotlin-stdlib-jdk8:${kotlinVersion}

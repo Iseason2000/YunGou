@@ -1,12 +1,10 @@
 package top.iseason.bukkit.bukkittemplate.dependency;
 
 import org.bukkit.Bukkit;
-import top.iseason.bukkit.bukkittemplate.TemplatePlugin;
 
 import java.io.*;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.security.MessageDigest;
@@ -16,15 +14,14 @@ import java.util.Objects;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
+/**
+ * 依赖下载器
+ */
 public class DependencyDownloader {
 
-    public static File parent = new File(TemplatePlugin.getPlugin().getDataFolder().getAbsoluteFile().getParentFile().getParentFile(), "libraries");
+    public static File parent = new File(".", "libraries");
     public List<String> repositories = new ArrayList<>();
     public List<String> dependencies = new ArrayList<>();
-
-    public DependencyDownloader() {
-        repositories.add("https://repo.maven.apache.org/maven2/");
-    }
 
     /**
      * 下载依赖
@@ -51,7 +48,7 @@ public class DependencyDownloader {
         if (jarFile.exists()) {
             try {
                 ClassInjector.addURL(jarFile.toURI().toURL());
-            } catch (MalformedURLException ignored) {
+            } catch (Exception ignored) {
             }
         } else {
             for (String repository : repositories) {
@@ -117,7 +114,7 @@ public class DependencyDownloader {
         }
     }
 
-    static boolean download(URL url, File file) {
+    private static boolean download(URL url, File file) {
         HttpURLConnection connection;
         try {
             connection = (HttpURLConnection) url.openConnection();
@@ -144,9 +141,7 @@ public class DependencyDownloader {
      * 获取文件的sha1值。
      */
     static String sha1(File file) {
-        FileInputStream in = null;
-        try {
-            in = new FileInputStream(file);
+        try (FileInputStream in = new FileInputStream(file)) {
             MessageDigest digest = MessageDigest.getInstance("SHA-1");
             byte[] buffer = new byte[1024 * 1024 * 10];
             int len;
@@ -162,13 +157,6 @@ public class DependencyDownloader {
             }
             return sha1.toString();
         } catch (Exception ignored) {
-        } finally {
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ignored) {
-            }
         }
         return null;
     }

@@ -37,13 +37,18 @@ public class XmlDependency {
                 Node node = childNodes.item(i);
                 if (node.getNodeType() != Node.ELEMENT_NODE) continue;
                 Element dependency = (Element) node;
-                String groupId = dependency.getElementsByTagName("groupId").item(0).getTextContent();
-                String artifactId = dependency.getElementsByTagName("artifactId").item(0).getTextContent();
+                NodeList groupIdNode = dependency.getElementsByTagName("groupId");
+                if (groupIdNode.getLength() == 0) continue;
+                String groupId = groupIdNode.item(0).getTextContent();
+                NodeList artifactIdNode = dependency.getElementsByTagName("artifactId");
+                if (artifactIdNode.getLength() == 0) continue;
+                String artifactId = artifactIdNode.item(0).getTextContent();
                 NodeList versionNode = dependency.getElementsByTagName("version");
                 if (versionNode.getLength() == 0) continue;
                 String version = versionNode.item(0).getTextContent();
                 NodeList optionalNode = dependency.getElementsByTagName("optional");
-                if (optionalNode.getLength() != 0) continue;
+                if (optionalNode.getLength() != 0 && optionalNode.item(0).getTextContent().equalsIgnoreCase("true"))
+                    continue;
                 NodeList scopeNode = dependency.getElementsByTagName("scope");
                 if (scopeNode.getLength() != 0) {
                     String scope = scopeNode.item(0).getTextContent();
