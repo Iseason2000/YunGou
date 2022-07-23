@@ -3,9 +3,12 @@ package top.iseason.bukkit.yungou.data
 import org.jetbrains.exposed.dao.id.EntityID
 import org.jetbrains.exposed.dao.id.IdTable
 import org.jetbrains.exposed.sql.Column
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
+import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
 
 object Cargos : StringIdTable() {
     val item = blob("item")
@@ -21,6 +24,7 @@ object Cargos : StringIdTable() {
         return try {
             var has = false
             transaction {
+                if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                 has = !Cargos.slice(Cargos.id).select { Cargos.id eq id }.limit(1).empty()
             }
             has

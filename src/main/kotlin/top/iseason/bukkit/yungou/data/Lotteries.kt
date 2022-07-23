@@ -2,11 +2,8 @@ package top.iseason.bukkit.yungou.data
 
 import org.bukkit.Bukkit
 import org.jetbrains.exposed.dao.id.IntIdTable
-import org.jetbrains.exposed.sql.ReferenceOption
-import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.javatime.datetime
-import org.jetbrains.exposed.sql.select
-import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkit.bukkittemplate.debug.debug
@@ -32,6 +29,7 @@ object Lotteries : IntIdTable() {
         var winner: UUID? = null
         lateinit var cargo: Cargo
         transaction {
+            if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
 //                addLogger(StdOutSqlLogger)
             cargo = Cargo.findById(id)!!
             val list =
@@ -66,6 +64,7 @@ object Lotteries : IntIdTable() {
                 broadcast("${SimpleLogger.prefix}${Lang.receive_broadcast.formatBy(Bukkit.getPlayer(winner).name, id)}")
                 debug(Lang.receive_broadcast.formatBy(Bukkit.getPlayer(winner).name, id))
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     new.offeringPrizes()
                 }
             }

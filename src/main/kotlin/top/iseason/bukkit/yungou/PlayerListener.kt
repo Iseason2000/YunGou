@@ -3,6 +3,8 @@ package top.iseason.bukkit.yungou
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerLoginEvent
+import org.jetbrains.exposed.sql.StdOutSqlLogger
+import org.jetbrains.exposed.sql.addLogger
 import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.transactions.transaction
@@ -22,6 +24,7 @@ object PlayerListener : Listener {
             val uniqueId = player.uniqueId
             var count = 0L
             transaction {
+                if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                 count = Lotteries.slice(Lotteries.id)
                     .select { Lotteries.uid eq uniqueId and (Lotteries.hasReceive eq false) }.count()
             }

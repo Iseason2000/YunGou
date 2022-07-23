@@ -43,8 +43,10 @@ object PAPI : PlaceholderExpansion() {
                 val id = args.getOrNull(1) ?: return null
                 val type = args.getOrNull(2) ?: return null
                 var cargo: Cargo? = cargoCache[id]
-                if (coolDown.check(id, 500L) && cargo != null) {
-                    cargo = cargoCache[id]
+                if (coolDown.check(id, 1000L) && cargo != null) {
+                    transaction {
+                        cargo!!.refresh()
+                    }
                 } else try {
                     transaction {
                         cargo = Cargo.findById(id)
@@ -64,8 +66,7 @@ object PAPI : PlaceholderExpansion() {
                     1
                 }
                 if ("canbuy".equals(type, true)) {
-                    if (!Config.isConnected || !cargo!!.enable) return "false"
-
+                    if (!Config.isConnected || !cargo!!.enable || cargo!!.isCoolDown()) return "false"
                     var existNum: Int? = cargoBuy[id]
                     if (!(coolDown.check(id, 500L) && existNum != null)) {
                         try {

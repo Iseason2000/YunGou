@@ -8,9 +8,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.file.Files;
 import java.security.MessageDigest;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
@@ -22,6 +20,7 @@ public class DependencyDownloader {
     public static File parent = new File(".", "libraries");
     public List<String> repositories = new ArrayList<>();
     public List<String> dependencies = new ArrayList<>();
+    public static Set<String> exists = new HashSet<>();
 
     /**
      * 下载依赖
@@ -37,6 +36,9 @@ public class DependencyDownloader {
         }
         String groupId = split[0];
         String artifact = split[1];
+        String classId = groupId + "." + artifact;
+        if (exists.contains(classId)) return;
+        exists.add(classId);
         String version = split[2];
         String suffix = groupId.replace(".", "/") + "/" + artifact + "/" + version + "/";
         File saveLocation = new File(parent, suffix.replace("/", File.separator));

@@ -25,6 +25,7 @@ fun mainCommand() {
     var suggest: Collection<String>? = null
     var lastUpdate = 0L
     fun getCargosNames() = transaction {
+        if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
         return@transaction Cargos.slice(Cargos.id).selectAll().map {
             it[Cargos.id].value
         }
@@ -78,6 +79,7 @@ fun mainCommand() {
                 val coolDown = getOptionalParam<Int>(2) ?: 1
                 if (Cargos.has(name)) throw ParmaException(Lang.command__add_id_exist)
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     Cargo.new(name) {
                         this.item = ExposedBlob(item.toByteArray())
                         startTime = LocalDateTime.now()
@@ -111,6 +113,7 @@ fun mainCommand() {
                 val id = getParam<String>(0)
                 var cargo: Cargo? = null
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__show_id_not_exist)
                 }
                 it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_id.formatBy(cargo!!.id)}")
@@ -137,6 +140,7 @@ fun mainCommand() {
                     }
                     var result: List<String>? = null
                     transaction {
+                        if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                         result = Lotteries.slice(Lotteries.cargo)
                             .select { Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false) }.map {
                                 it[Lotteries.cargo].value
@@ -151,6 +155,7 @@ fun mainCommand() {
                 val player = it as Player
                 val id = getParam<String>(0)
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
 //                    addLogger(StdOutSqlLogger)
                     val firstOrNull = Lottery.find(
                         Lotteries.uid eq player.uniqueId and (Lotteries.cargo eq id) and (Lotteries.hasReceive eq false)
@@ -174,6 +179,7 @@ fun mainCommand() {
                 val player = sender as Player
                 player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__list_head}")
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     Lotteries.slice(Lotteries.cargo, Lotteries.serial)
                         .select { Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false) }.forEach {
                             player.sendColorMessage(
@@ -210,7 +216,12 @@ fun mainCommand() {
                 val id = getParam<String>(0)
                 var count = 0
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
+//                    exec("SET foreign_key_checks = 0;")
+                    Records.deleteWhere { Records.cargo eq id }
+                    Lotteries.deleteWhere { Lotteries.cargo eq id }
                     count = Cargos.deleteWhere { Cargos.id eq id }
+//                    exec("SET foreign_key_checks = 1;")
                 }
                 debug("&6删除了商品 &c$id")
                 count != 0
@@ -244,6 +255,7 @@ fun mainCommand() {
                 val count = getOptionalParam<Int>(2) ?: 1
                 if (count <= 0) throw ParmaException("&c请输入大于0的份数")
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
 //                    addLogger(StdOutSqlLogger)
                     val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
                     if (!cargo.enable) throw ParmaException(Lang.command__buy_not_enable.formatBy(id))
@@ -331,6 +343,7 @@ fun mainCommand() {
             onExecute {
                 val id = getParam<String>(0)
                 transaction {
+                    if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
                     cargo.enable = !cargo.enable
                     it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__toogle.formatBy(cargo.enable)}")

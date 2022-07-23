@@ -21,14 +21,20 @@ class Lottery(id: EntityID<Int>) : IntEntity(id) {
 
     //发放奖品
     fun offeringPrizes() {
-        val player = Bukkit.getPlayer(uid) ?: return
-        if (hasReceive) {
-            player.sendColorMessage("${SimpleLogger.prefix}${Lang.receive_success.formatBy(cargo.id)}")
+        val car: Cargo
+        try {
+            car = cargo
+        } catch (e: Exception) {
             return
         }
-        if (player.giveItem(ItemUtil.fromByteArray(cargo.item.bytes))) {
+        val player = Bukkit.getPlayer(uid) ?: return
+        if (hasReceive) {
+            player.sendColorMessage("${SimpleLogger.prefix}${Lang.receive_success.formatBy(car.id)}")
+            return
+        }
+        if (player.giveItem(ItemUtil.fromByteArray(car.item.bytes))) {
             hasReceive = true
-            player.sendColorMessage("${SimpleLogger.prefix}${Lang.receive_success.formatBy(cargo.id)}")
+            player.sendColorMessage("${SimpleLogger.prefix}${Lang.receive_success.formatBy(car.id)}")
         } else {
             player.sendColorMessage("${SimpleLogger.prefix}${Lang.receive_inventory_full.formatBy(cargo.id)}")
         }

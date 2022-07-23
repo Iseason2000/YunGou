@@ -3,15 +3,14 @@ package top.iseason.bukkit.yungou.data
 import com.zaxxer.hikari.HikariConfig
 import com.zaxxer.hikari.HikariDataSource
 import org.bukkit.configuration.file.FileConfiguration
-import org.jetbrains.exposed.sql.Database
-import org.jetbrains.exposed.sql.Schema
-import org.jetbrains.exposed.sql.SchemaUtils
+import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.transaction
 import top.iseason.bukkit.bukkittemplate.config.SimpleYAMLConfig
 import top.iseason.bukkit.bukkittemplate.config.annotations.Comment
 import top.iseason.bukkit.bukkittemplate.config.annotations.FilePath
 import top.iseason.bukkit.bukkittemplate.config.annotations.Key
+import top.iseason.bukkit.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkit.bukkittemplate.debug.info
 import top.iseason.bukkit.bukkittemplate.dependency.DependencyDownloader
 import top.iseason.bukkit.yungou.YunGou
@@ -127,6 +126,7 @@ object Config : SimpleYAMLConfig() {
             ds = HikariDataSource(config)
             YunGou.mysql = Database.connect(ds!!)
             transaction {
+                if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
 //                    addLogger(StdOutSqlLogger)
                 if (!dbType.equals("sqlite", true)) {
                     val schema = Schema(dbName)

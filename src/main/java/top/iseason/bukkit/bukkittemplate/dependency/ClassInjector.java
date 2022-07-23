@@ -13,6 +13,7 @@ import java.net.URLClassLoader;
 public class ClassInjector {
     private static final MethodHandle addUrlHandle;
     private static final Object ucp;
+    private static final ClassLoader classLoader = ClassInjector.class.getClassLoader();
 
     static {
         //通过反射获取ClassLoader addUrl 方法，因为涉及java17 无奈使用UnSafe方法
@@ -21,7 +22,7 @@ public class ClassInjector {
             f.setAccessible(true);
             Unsafe unsafe = (Unsafe) f.get(null);
             Field ucpField = URLClassLoader.class.getDeclaredField("ucp");
-            ucp = unsafe.getObject(ClassInjector.class.getClassLoader(), unsafe.objectFieldOffset(ucpField));
+            ucp = unsafe.getObject(classLoader, unsafe.objectFieldOffset(ucpField));
             Field lookupField = MethodHandles.Lookup.class.getDeclaredField("IMPL_LOOKUP");
             MethodHandles.Lookup lookup = (MethodHandles.Lookup) unsafe.getObject(unsafe.staticFieldBase(lookupField), unsafe.staticFieldOffset(lookupField));
             addUrlHandle = lookup.findVirtual(ucp.getClass(), "addURL", MethodType.methodType(void.class, URL.class));
