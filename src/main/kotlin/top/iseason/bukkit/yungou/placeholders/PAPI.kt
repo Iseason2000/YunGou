@@ -3,7 +3,10 @@ package top.iseason.bukkit.yungou.placeholders
 import me.clip.placeholderapi.expansion.PlaceholderExpansion
 import org.bukkit.Bukkit
 import org.bukkit.OfflinePlayer
-import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SortOrder
+import org.jetbrains.exposed.sql.and
+import org.jetbrains.exposed.sql.select
+import org.jetbrains.exposed.sql.sum
 import org.jetbrains.exposed.sql.transactions.transaction
 import top.iseason.bukkit.bukkittemplate.utils.EasyCoolDown
 import top.iseason.bukkit.bukkittemplate.utils.WeakCoolDown
@@ -16,9 +19,13 @@ import java.util.*
 
 object PAPI : PlaceholderExpansion() {
 
-    val coolDown = WeakCoolDown<String>()
-    val cargoCache = WeakHashMap<String, Cargo>()
-    val cargoBuy = WeakHashMap<String, Int>()
+    private val coolDown = WeakCoolDown<String>()
+    private val cargoCache = WeakHashMap<String, Cargo>()
+    private val cargoBuy = WeakHashMap<String, Int>()
+    private val playerBuy = WeakHashMap<UUID, Int>()
+    private val lotteryAll = WeakHashMap<Int, Lottery>()
+    private val lotteries = WeakHashMap<String, Lottery>()
+
     override fun getAuthor(): String {
         return "Iseason"
     }
@@ -37,57 +44,43 @@ object PAPI : PlaceholderExpansion() {
 
     override fun onRequest(player: OfflinePlayer?, params: String): String? {
         if (params.isEmpty()) return null
+        if (!Config.isConnected && !EasyCoolDown.check("reconnected-by-placeholder", 5000L)) {
+            Config.reConnectedDB()
+        }
         val args = params.split("_")
         when (args[0].lowercase()) {
             "cargo" -> {
                 val id = args.getOrNull(1) ?: return null
                 val type = args.getOrNull(2) ?: return null
-                var cargo: Cargo? = cargoCache[id]
-                if (coolDown.check(id, 1000L) && cargo != null) {
-                    transaction {
-                        cargo!!.refresh()
-                    }
-                } else try {
-                    transaction {
-                        cargo = Cargo.findById(id)
-                    }
-                    cargoCache[id] = cargo
-                } catch (e: Exception) {
-                    if (!EasyCoolDown.check("reconnected-by-placeholder", 5000L)) {
-                        Config.reConnectedDB()
-                    }
-                    return null
-                }
-                if (!Config.isConnected) return null
-                if (cargo == null) return null
+                val cargo = getCargo(id) ?: return null
                 val count = try {
                     args.getOrNull(3)?.toInt() ?: 1
                 } catch (e: Exception) {
                     1
                 }
                 if ("canbuy".equals(type, true)) {
-                    if (!Config.isConnected || !cargo!!.enable || cargo!!.isCoolDown()) return "false"
+                    if (!cargo.enable || cargo.isCoolDown()) return "false"
                     var existNum: Int? = cargoBuy[id]
                     if (!(coolDown.check(id, 500L) && existNum != null)) {
                         try {
                             transaction {
                                 existNum = Records.slice(Records.num.sum())
-                                    .select { Records.cargo eq id and (Records.serial eq cargo!!.serial) }.firstOrNull()
+                                    .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
                                     ?.get(Records.num.sum()) ?: 0
                             }
                         } catch (_: Exception) {
                         }
                     }
                     if (existNum == null) return "false"
-                    return (existNum!! + count <= cargo!!.num).toString()
+                    return (existNum!! + count <= cargo.num).toString()
                 }
                 if ("hasbuy".equals(type, true)) {
-                    if (!Config.isConnected || !cargo!!.enable) return "0"
+                    if (!Config.isConnected || !cargo.enable) return "0"
                     var existNum: Int? = null
                     try {
                         transaction {
                             existNum = Records.slice(Records.num.sum())
-                                .select { Records.cargo eq id and (Records.serial eq cargo!!.serial) }.firstOrNull()
+                                .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
                                 ?.get(Records.num.sum()) ?: 0
                         }
                     } catch (_: Exception) {
@@ -97,17 +90,17 @@ object PAPI : PlaceholderExpansion() {
                 }
                 when (type.lowercase()) {
 //                    "id" -> return cargo!!.id.value
-                    "num" -> return cargo!!.num.toString()
-                    "enable" -> return cargo!!.enable.toString()
-                    "starttime" -> return cargo!!.startTime.toString()
-                    "lasttime" -> return cargo!!.lastTime.toString()
-                    "serial" -> return cargo!!.serial.toString()
-                    "iscooldown" -> return cargo!!.isCoolDown().toString()
-                    "cooldown" -> return cargo!!.coolDown.toString()
-                    "cooldownremain" -> return if (cargo!!.lastTime == null) null else max(
+                    "num" -> return cargo.num.toString()
+                    "enable" -> return cargo.enable.toString()
+                    "starttime" -> return cargo.startTime.toString()
+                    "lasttime" -> return cargo.lastTime.toString()
+                    "serial" -> return cargo.serial.toString()
+                    "iscooldown" -> return cargo.isCoolDown().toString()
+                    "cooldown" -> return cargo.coolDown.toString()
+                    "cooldownremain" -> return if (cargo.lastTime == null) null else max(
                         Duration.between(
                             LocalDateTime.now(),
-                            cargo!!.lastTime!!.plusMinutes(cargo!!.coolDown.toLong())
+                            cargo.lastTime!!.plusMinutes(cargo.coolDown.toLong())
                         ).toMinutes(), 0L
                     ).toString()
                     else -> return null
@@ -120,28 +113,83 @@ object PAPI : PlaceholderExpansion() {
                 } catch (e: Exception) {
                     return null
                 }
-                var limit: ResultRow? = null
+                var lottery: Lottery?
                 if ("*".equals(id, true)) {
-                    transaction {
-                        limit = Lotteries.selectAll().limit(1, count.toLong()).orderBy(Lotteries.time, SortOrder.DESC)
-                            .firstOrNull()
+                    lottery = lotteryAll[count]
+                    if (lottery == null || !coolDown.check("all_$count", 3000)) {
+                        transaction {
+//                            addLogger(StdOutSqlLogger)
+                            lottery =
+                                Lottery.all().limit(1, count.toLong()).orderBy(Lotteries.time to SortOrder.DESC)
+                                    .firstOrNull()
+                        }
+                        lotteryAll[count] = lottery
                     }
-                } else
-                    transaction {
-                        limit = Lotteries.select { Lotteries.cargo eq id }.limit(1, count.toLong())
-                            .orderBy(Lotteries.time, SortOrder.DESC)
-                            .firstOrNull()
+                } else {
+                    val key = "${id}_$count"
+                    lottery = lotteries[key]
+                    if (lottery == null || !coolDown.check(key, 3000)) {
+                        transaction {
+                            lottery = Lottery.find { Lotteries.cargo eq id }.limit(1, count.toLong())
+                                .orderBy(Lotteries.time to SortOrder.DESC)
+                                .firstOrNull()
+                        }
+                        lotteries[key] = lottery
                     }
-                if (limit == null)
+                }
+                if (lottery == null)
                     return Lang.placeholder__no_record
                 return Lang.placeholder__record.formatBy(
-                    Bukkit.getOfflinePlayer(limit!![Lotteries.uid]).name,
-                    limit!![Lotteries.cargo],
-                    limit!![Lotteries.serial],
-                    limit!![Lotteries.time]
+                    Bukkit.getOfflinePlayer(lottery!!.uid).name,
+                    lottery!!._readValues!![Lotteries.cargo],
+                    lottery!!.serial,
+                    lottery!!.time
                 )
+            }
+            "player" -> {
+                val id = args.getOrNull(1) ?: return null
+                val type = args.getOrNull(2) ?: return null
+                if (player == null) return null
+                val cargo = getCargo(id) ?: return null
+                val uniqueId = player.uniqueId
+                when (type.lowercase()) {
+                    "hasbuy" -> {
+                        var hasBuy = playerBuy[uniqueId]
+                        if (hasBuy != null && coolDown.check(uniqueId.toString(), 500)) return hasBuy.toString()
+                        try {
+                            transaction {
+                                hasBuy = Records.slice(Records.num.sum())
+                                    .select { Records.cargo eq id and (Records.serial eq cargo.serial) and (Records.uid eq uniqueId) }
+                                    .firstOrNull()
+                                    ?.get(Records.num.sum()) ?: 0
+                            }
+                        } catch (_: Exception) {
+                        }
+                        playerBuy[uniqueId] = hasBuy
+                        return hasBuy.toString()
+                    }
+                    else -> return null
+                }
             }
             else -> return null
         }
+    }
+
+    private fun getCargo(id: String): Cargo? {
+        if (!Config.isConnected) return null
+        var cargo: Cargo? = cargoCache[id]
+        if (coolDown.check(id, 1000L) && cargo != null) {
+            transaction {
+                cargo!!.refresh()
+            }
+        } else try {
+            transaction {
+                cargo = Cargo.findById(id)
+            }
+            cargoCache[id] = cargo
+        } catch (e: Exception) {
+            return null
+        }
+        return cargo
     }
 }

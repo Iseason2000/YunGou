@@ -12,6 +12,8 @@ yungou_cargo_[id]_iscooldown: 是否正在冷却 是返回 true 不是返回 fal
 yungou_cargo_[id]_cooldown: 冷却分钟数
 yungou_cargo_[id]_cooldownremain: 剩余冷却分钟数
 
+yungou_player_[id]_hasbuy: 玩家目前该商品已购买的数量
+
 # 开奖记录 [id] 替换为商品的id,<num>表示大于等于0的整数,不输入默认为3
 # 默认格式 玩家 Iceason 获得了 测试 第 0 期 时间 2022-07-18T23:27:46.590，可在lang.yml中修改
 # 举例 yungou_lottery_test 表示 id 为test 的商品的最近
