@@ -1,0 +1,24 @@
+# 变量说明,本文件仅做说明，无实际作用
+
+# 商品变量 [id] 替换为商品的id,[num]表示正整数
+yungou_cargo_[id]_canbuy_[num]: 能否购买[num] 个,不写默认1,可以买返回true 不能买返回false
+yungou_cargo_[id]_hasbuy: 已经购买了多少个
+yungou_cargo_[id]_num: 最大购买份数
+yungou_cargo_[id]_enable: 是否启用 启用返回 true 不启用返回 false
+yungou_cargo_[id]_starttime: 创建时间
+yungou_cargo_[id]_lasttime: 上次开奖时间
+yungou_cargo_[id]_serial: 是第几期
+yungou_cargo_[id]_iscooldown: 是否正在冷却 是返回 true 不是返回 false
+yungou_cargo_[id]_cooldown: 冷却分钟数
+yungou_cargo_[id]_cooldownremain: 剩余冷却分钟数
+
+yungou_player_[id]_hasbuy: 玩家目前该商品已购买的数量
+
+# 开奖记录 [id] 替换为商品的id,<num>表示大于等于0的整数,不输入默认为3
+# 默认格式 玩家 Iceason 获得了 测试 第 0 期 时间 2022-07-18T23:27:46.590，可在lang.yml中修改
+# 举例 yungou_lottery_test 表示 id 为test 的商品的最近
+yungou_lottery_[id]_[count]: 某个ID的商品的最近第 [count] 个记录
+yungou_lottery_*_[count]: 所有商品的最近第 [count] 个记录
+
+
+

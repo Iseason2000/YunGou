@@ -1,10 +1,7 @@
 package top.iseason.bukkit.yungou
 
 import top.iseason.bukkit.yungou.command.mainCommand
-import top.iseason.bukkit.yungou.data.Cargos
-import top.iseason.bukkit.yungou.data.Config
-import top.iseason.bukkit.yungou.data.Lotteries
-import top.iseason.bukkit.yungou.data.Records
+import top.iseason.bukkit.yungou.data.*
 import top.iseason.bukkit.yungou.placeholders.PAPI
 import top.iseason.bukkittemplate.KotlinPlugin
 import top.iseason.bukkittemplate.command.CommandHandler
@@ -27,8 +24,9 @@ object YunGou : KotlinPlugin() {
             PAPI.register()
         PlayerListener.register()
         Config.load(false)
-        DatabaseConfig.initTables(Cargos, Lotteries, Records)
+        Lang.load(false)
         DatabaseConfig.load(false)
+        DatabaseConfig.initTables(Cargos, Lotteries, Records)
         SimpleLogger.prefix = "&a[&6${javaPlugin.description.name}&a]&r ".toColor()
         info("&a插件已启用!")
     }

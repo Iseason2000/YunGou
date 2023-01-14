@@ -7,11 +7,10 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
-import top.iseason.bukkit.yungou.formatBy
 import top.iseason.bukkittemplate.config.dbTransaction
-import top.iseason.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkittemplate.debug.debug
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.broadcast
+import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
 import top.iseason.bukkittemplate.utils.other.RandomUtils
 import top.iseason.bukkittemplate.utils.other.submit
 import java.time.LocalDateTime
@@ -63,7 +62,7 @@ object Lotteries : IntIdTable() {
             }
             val name = Bukkit.getOfflinePlayer(winner!!).name ?: winner.toString()
             submit(async = true, delay = Config.countdown * 20L) {
-                broadcast("${SimpleLogger.prefix}${Lang.receive_broadcast.formatBy(name, id)}")
+                broadcast(Lang.receive_broadcast.formatBy(name, id))
                 debug(Lang.receive_broadcast.formatBy(name, id))
                 dbTransaction {
                     new.offeringPrizes()

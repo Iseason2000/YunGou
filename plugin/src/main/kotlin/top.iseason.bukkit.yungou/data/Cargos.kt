@@ -1,11 +1,9 @@
 package top.iseason.bukkit.yungou.data
 
-import org.jetbrains.exposed.dao.id.EntityID
-import org.jetbrains.exposed.dao.id.IdTable
-import org.jetbrains.exposed.sql.Column
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.selectAll
+import top.iseason.bukkittemplate.config.StringIdTable
 import top.iseason.bukkittemplate.config.dbTransaction
 import top.iseason.bukkittemplate.utils.other.EasyCoolDown
 
@@ -44,9 +42,4 @@ object Cargos : StringIdTable() {
         return keys
 
     }
-}
-
-open class StringIdTable(name: String = "", columnName: String = "id") : IdTable<String>(name) {
-    final override val id: Column<EntityID<String>> = varchar(columnName, 20).entityId()
-    final override val primaryKey = PrimaryKey(id)
 }

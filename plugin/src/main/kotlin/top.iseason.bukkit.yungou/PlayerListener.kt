@@ -9,7 +9,7 @@ import top.iseason.bukkit.yungou.data.Lang
 import top.iseason.bukkit.yungou.data.Lotteries
 import top.iseason.bukkittemplate.config.DatabaseConfig
 import top.iseason.bukkittemplate.config.dbTransaction
-import top.iseason.bukkittemplate.debug.SimpleLogger
+import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.sendColorMessage
 import top.iseason.bukkittemplate.utils.other.submit
 
@@ -26,7 +26,7 @@ object PlayerListener : Listener {
                     .select { Lotteries.uid eq uniqueId and (Lotteries.hasReceive eq false) }.count()
             }
             if (count == 0L) return@submit
-            player.sendColorMessage("${SimpleLogger.prefix}${Lang.player_login.formatBy(count)}")
+            player.sendColorMessage(Lang.player_login.formatBy(count))
         }
     }
 }

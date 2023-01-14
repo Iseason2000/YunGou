@@ -5,9 +5,7 @@ import org.bukkit.permissions.PermissionDefault
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
-import top.iseason.bukkit.yungou.ItemUtil.toByteArray
 import top.iseason.bukkit.yungou.data.*
-import top.iseason.bukkit.yungou.formatBy
 import top.iseason.bukkittemplate.command.*
 import top.iseason.bukkittemplate.config.DatabaseConfig
 import top.iseason.bukkittemplate.config.dbTransaction
@@ -15,7 +13,9 @@ import top.iseason.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkittemplate.debug.debug
 import top.iseason.bukkittemplate.utils.bukkit.EntityUtils.getHeldItem
 import top.iseason.bukkittemplate.utils.bukkit.ItemUtils.checkAir
+import top.iseason.bukkittemplate.utils.bukkit.ItemUtils.toByteArray
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.broadcast
+import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.sendColorMessage
 import top.iseason.bukkittemplate.utils.other.EasyCoolDown
 import java.time.LocalDateTime
@@ -42,9 +42,9 @@ fun mainCommand() {
             executor {
                 SimpleLogger.isDebug = !SimpleLogger.isDebug
                 if (SimpleLogger.isDebug) {
-                    it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__debug_on}")
+                    it.sendColorMessage(Lang.command__debug_on)
                 } else {
-                    it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__debug_off}")
+                    it.sendColorMessage(Lang.command__debug_off)
                 }
             }
         }
@@ -106,13 +106,13 @@ fun mainCommand() {
                     if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__show_id_not_exist)
                 }
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_id.formatBy(cargo!!.id)}")
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_num.formatBy(cargo!!.num)}")
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_enable.formatBy(cargo!!.enable)}")
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_time.formatBy(cargo!!.startTime)}")
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_serial.formatBy(cargo!!.serial)}")
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_lastTime.formatBy(cargo!!.lastTime.toString())}")
-                it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__show_cooldown.formatBy(cargo!!.coolDown)}")
+                it.sendColorMessage(Lang.command__show_id.formatBy(cargo!!.id))
+                it.sendColorMessage(Lang.command__show_num.formatBy(cargo!!.num))
+                it.sendColorMessage(Lang.command__show_enable.formatBy(cargo!!.enable))
+                it.sendColorMessage(Lang.command__show_time.formatBy(cargo!!.startTime))
+                it.sendColorMessage(Lang.command__show_serial.formatBy(cargo!!.serial))
+                it.sendColorMessage(Lang.command__show_lastTime.formatBy(cargo!!.lastTime.toString()))
+                it.sendColorMessage(Lang.command__show_cooldown.formatBy(cargo!!.coolDown))
             }
         }
         node(
@@ -160,18 +160,16 @@ fun mainCommand() {
             executor {
                 if (!DatabaseConfig.isConnected) return@executor
                 val player = it as Player
-                player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__list_head}")
+                player.sendColorMessage(Lang.command__list_head)
                 dbTransaction {
                     if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     Lotteries.slice(Lotteries.cargo, Lotteries.serial)
                         .select { Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false) }.forEach {
                             player.sendColorMessage(
-                                "${SimpleLogger.prefix}${
-                                    Lang.command__list_body.formatBy(
-                                        it[Lotteries.cargo].value,
-                                        it[Lotteries.serial]
-                                    )
-                                }"
+                                Lang.command__list_body.formatBy(
+                                    it[Lotteries.cargo].value,
+                                    it[Lotteries.serial]
+                                )
                             )
                         }
                 }
@@ -243,14 +241,14 @@ fun mainCommand() {
                             time = LocalDateTime.now()
                         }
                     } catch (e: Exception) {
-                        player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__buy_error}")
+                        player.sendColorMessage(Lang.command__buy_error)
                         return@dbTransaction
                     }
-                    player.sendColorMessage("${SimpleLogger.prefix}${Lang.command__buy_success.formatBy(id, count)}")
+                    player.sendColorMessage(Lang.command__buy_success.formatBy(id, count))
                     debug("&a已为 &6${player.name} &a购买 &6$id &aX &6$count")
                     if (after == cargo.num) {
                         //开奖
-                        broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
+                        broadcast(Lang.command__buy_start.formatBy(id, Config.countdown))
                         Lotteries.drawLottery(id)
                         debug("&6$id &a已开奖")
                     }
@@ -268,11 +266,11 @@ fun mainCommand() {
                 if (!DatabaseConfig.isConnected) return@executor
                 val id = getParam<String>(0)
                 if (Lotteries.drawLottery(id) == null) {
-                    it.sendColorMessage("${SimpleLogger.prefix}&c没有人购买这一期的商品")
+                    it.sendColorMessage("&c没有人购买这一期的商品")
                     return@executor
                 }
-                broadcast("${SimpleLogger.prefix}${Lang.command__buy_start.formatBy(id, Config.countdown)}")
-                it.sendColorMessage("${SimpleLogger.prefix}&a强制开启成功")
+                broadcast(Lang.command__buy_start.formatBy(id, Config.countdown))
+                it.sendColorMessage("&a强制开启成功")
                 debug("&6强制开启了商品 &c$id")
             }
         }
@@ -296,7 +294,7 @@ fun mainCommand() {
                     if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                     val cargo = Cargo.findById(id) ?: throw ParmaException(Lang.command__buy_id_unexist)
                     cargo.enable = !cargo.enable
-                    it.sendColorMessage("${SimpleLogger.prefix}${Lang.command__toogle.formatBy(cargo.enable)}")
+                    it.sendColorMessage(Lang.command__toogle.formatBy(cargo.enable))
                 }
             }
         }
