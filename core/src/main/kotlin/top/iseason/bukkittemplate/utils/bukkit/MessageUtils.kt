@@ -106,8 +106,9 @@ object MessageUtils {
     /**
      * 进行颜色转换并发送给所有人
      */
-    fun broadcast(message: Any?, prefix: String = defaultPrefix) =
+    fun broadcast(message: Any?, prefix: String = defaultPrefix) {
         Bukkit.getOnlinePlayers().forEach { it.sendColorMessage(message, prefix) }
+    }
 
     /**
      * 进行颜色转换并发送给控制台

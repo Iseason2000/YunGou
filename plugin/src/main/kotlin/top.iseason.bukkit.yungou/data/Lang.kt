@@ -14,7 +14,7 @@ object Lang : SimpleYAMLConfig() {
     var prefix = "&6[&a云购&6]&r "
 
     var receive_success = "&a奖励 &6{0} &a已发放到你的背包"
-    var receive_broadcast = "&a恭喜玩家 &6{0} &a获得 &6{1}"
+    var receive_broadcastMessage = "&a恭喜玩家 &6{0} &a获得 &6{1}"
     var receive_inventory_full = "&6你的背包空间不足，无法领取奖励 &a{0} &6 ,请腾出空间后输入/yungou get {0} 领取"
 
     var player_login = "&7你有 &6{0} &7个奖励未领取，请输入&6/yungou get [id] &7领取"
@@ -38,6 +38,10 @@ object Lang : SimpleYAMLConfig() {
     var command__show_cooldown = "&7冷却时间: &6{0} 分钟"
 
     var command__get_failure = "&6商品ID &a{0} 不存在"
+    var command__get_all_empty = "&6你没有待领取的物品!"
+    var command__get_all_remain = "&a你领取了 {0} 个物品，背包空间已满无法继续领取!"
+    var command__get_all_success = "&a你领取了所有的物品，共 {0} 个"
+
 
     var command__list_head = "&7你的获奖商品有:"
     var command__list_body = "&6商品: {0} 第 {1} 期"

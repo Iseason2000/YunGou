@@ -5,6 +5,7 @@ import org.bukkit.permissions.PermissionDefault
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.api.ExposedBlob
+import top.iseason.bukkit.yungou.broadcastMessage
 import top.iseason.bukkit.yungou.data.*
 import top.iseason.bukkittemplate.command.*
 import top.iseason.bukkittemplate.config.DatabaseConfig
@@ -14,7 +15,6 @@ import top.iseason.bukkittemplate.debug.debug
 import top.iseason.bukkittemplate.utils.bukkit.EntityUtils.getHeldItem
 import top.iseason.bukkittemplate.utils.bukkit.ItemUtils.checkAir
 import top.iseason.bukkittemplate.utils.bukkit.ItemUtils.toByteArray
-import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.broadcast
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.sendColorMessage
 import top.iseason.bukkittemplate.utils.other.EasyCoolDown
@@ -129,7 +129,6 @@ fun mainCommand() {
                     }
                     var result: List<String>? = null
                     dbTransaction {
-                        if (SimpleLogger.isDebug) addLogger(StdOutSqlLogger)
                         result = Lotteries.slice(Lotteries.cargo)
                             .select { Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false) }.map {
                                 it[Lotteries.cargo].value
@@ -140,14 +139,60 @@ fun mainCommand() {
             )
             executor {
                 if (!DatabaseConfig.isConnected) return@executor
+                if (EasyCoolDown.check(it, 3000)) {
+                    return@executor
+                }
                 val player = it as Player
                 val id = getParam<String>(0)
                 dbTransaction {
                     val firstOrNull = Lottery.find(
                         Lotteries.uid eq player.uniqueId and (Lotteries.cargo eq id) and (Lotteries.hasReceive eq false)
                     ).limit(1).firstOrNull() ?: throw ParmaException(Lang.command__get_failure.formatBy(id))
-//                    onSuccess(Lang.command__get_success.formatBy(id))
                     firstOrNull.offeringPrizes()
+                }
+            }
+        }
+        node(
+            "getall"
+        ) {
+            description = "获取所有的云购奖品"
+            async = true
+            isPlayerOnly = true
+            executor {
+                if (!DatabaseConfig.isConnected) return@executor
+                if (EasyCoolDown.check(it, 3000)) {
+                    return@executor
+                }
+                val player = it as Player
+                var count = 0
+                var end = false
+                dbTransaction {
+                    var page = 0L
+                    while (true) {
+                        val lotteries = Lottery.find(
+                            Lotteries.uid eq player.uniqueId and (Lotteries.hasReceive eq false)
+                        ).limit(10, page * 10).toList()
+                        if (lotteries.isEmpty()) {
+                            end = true
+                            break
+                        }
+                        if (!lotteries.all {
+                                val offeringPrizes = it.offeringPrizes()
+                                if (offeringPrizes) count++
+                                offeringPrizes
+                            }) {
+                            break
+                        }
+                        page++
+                    }
+                }
+                //没有
+                if (end) {
+                    if (count == 0)
+                        it.sendColorMessage(Lang.command__get_all_empty)
+                    else it.sendColorMessage(Lang.command__get_all_success.formatBy(count))
+                } else {
+                    it.sendColorMessage(Lang.command__get_all_remain.formatBy(count))
                 }
             }
         }
@@ -159,6 +204,9 @@ fun mainCommand() {
             isPlayerOnly = true
             executor {
                 if (!DatabaseConfig.isConnected) return@executor
+                if (EasyCoolDown.check(it, 3000)) {
+                    return@executor
+                }
                 val player = it as Player
                 player.sendColorMessage(Lang.command__list_head)
                 dbTransaction {
@@ -248,7 +296,7 @@ fun mainCommand() {
                     debug("&a已为 &6${player.name} &a购买 &6$id &aX &6$count")
                     if (after == cargo.num) {
                         //开奖
-                        broadcast(Lang.command__buy_start.formatBy(id, Config.countdown))
+                        broadcastMessage(Lang.command__buy_start.formatBy(id, Config.countdown))
                         Lotteries.drawLottery(id)
                         debug("&6$id &a已开奖")
                     }
@@ -269,7 +317,7 @@ fun mainCommand() {
                     it.sendColorMessage("&c没有人购买这一期的商品")
                     return@executor
                 }
-                broadcast(Lang.command__buy_start.formatBy(id, Config.countdown))
+                broadcastMessage(Lang.command__buy_start.formatBy(id, Config.countdown))
                 it.sendColorMessage("&a强制开启成功")
                 debug("&6强制开启了商品 &c$id")
             }

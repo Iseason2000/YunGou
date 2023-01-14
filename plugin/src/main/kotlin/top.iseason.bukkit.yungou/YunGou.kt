@@ -1,5 +1,6 @@
 package top.iseason.bukkit.yungou
 
+import org.bukkit.Bukkit
 import top.iseason.bukkit.yungou.command.mainCommand
 import top.iseason.bukkit.yungou.data.*
 import top.iseason.bukkit.yungou.placeholders.PAPI
@@ -11,6 +12,9 @@ import top.iseason.bukkittemplate.debug.SimpleLogger
 import top.iseason.bukkittemplate.debug.info
 import top.iseason.bukkittemplate.hook.PlaceHolderHook
 import top.iseason.bukkittemplate.utils.bukkit.EventUtils.register
+import top.iseason.bukkittemplate.utils.bukkit.MessageUtils
+import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
+import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.sendColorMessage
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.toColor
 
 object YunGou : KotlinPlugin() {
@@ -47,4 +51,11 @@ object YunGou : KotlinPlugin() {
         info("&6插件已卸载!")
     }
 
+}
+
+fun broadcastMessage(message: Any?, prefix: String = MessageUtils.defaultPrefix) {
+    if (Config.bc_mode && !message?.toString().isNullOrBlank()) {
+        Bukkit.dispatchCommand(Bukkit.getConsoleSender(), Config.bc_command.formatBy("$prefix${message.toString()}"))
+    } else
+        Bukkit.getOnlinePlayers().forEach { it.sendColorMessage(message, prefix) }
 }

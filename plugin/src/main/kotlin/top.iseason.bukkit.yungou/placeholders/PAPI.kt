@@ -98,7 +98,7 @@ object PAPI : PlaceholderExpansion() {
                     "serial" -> return cargo.serial.toString()
                     "iscooldown" -> return cargo.isCoolDown().toString()
                     "cooldown" -> return cargo.coolDown.toString()
-                    "cooldownremain" -> return if (cargo.lastTime == null) null else max(
+                    "cooldownremain" -> return if (cargo.lastTime == null) "0" else max(
                         Duration.between(
                             LocalDateTime.now(),
                             cargo.lastTime!!.plusMinutes(cargo.coolDown.toLong())

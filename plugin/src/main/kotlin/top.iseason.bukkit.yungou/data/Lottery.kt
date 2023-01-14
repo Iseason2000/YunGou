@@ -19,25 +19,26 @@ class Lottery(id: EntityID<Int>) : IntEntity(id) {
     var hasReceive by Lotteries.hasReceive
 
     //发放奖品
-    fun offeringPrizes() {
+    fun offeringPrizes(): Boolean {
         val car: Cargo
         try {
             car = cargo
         } catch (e: Exception) {
-            return
+            return false
         }
-        val player = Bukkit.getPlayer(uid) ?: return
+        val player = Bukkit.getPlayer(uid) ?: return false
         if (hasReceive) {
-            player.sendColorMessage(Lang.receive_success.formatBy(car.id))
-            return
+            return false
         }
         val item = ItemUtils.fromByteArray(car.item.bytes)
-        if (player.canAddItem(item) == 0) {
+        return if (player.canAddItem(item) == 0) {
             player.inventory.addItem(item)
             hasReceive = true
             player.sendColorMessage(Lang.receive_success.formatBy(car.id))
+            true
         } else {
             player.sendColorMessage(Lang.receive_inventory_full.formatBy(cargo.id))
+            false
         }
     }
 }
