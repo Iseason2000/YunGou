@@ -1,101 +1,100 @@
 package top.iseason.bukkittemplate;
 
 import org.bukkit.Bukkit;
-import org.bukkit.event.HandlerList;
 import org.bukkit.plugin.java.JavaPlugin;
-import top.iseason.bukkittemplate.dependency.DependencyManager;
-import top.iseason.bukkittemplate.hook.PlaceHolderHook;
+import top.iseason.bukkittemplate.dependency.PluginDependency;
+import top.iseason.bukkittemplate.loader.IsolatedClassLoader;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.JarURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.jar.JarFile;
 
 /**
- * bukkit插件主类/入口
+ * bukkit端主类/入口
  */
 public class BukkitTemplate extends JavaPlugin {
 
-    private static List<Class<?>> classes;
-    private static KotlinPlugin ktPlugin;
-    private static BukkitTemplate plugin = null;
+    public static ClassLoader isolatedClassLoader;
+    private static JavaPlugin plugin = null;
+    private static Object bootStrap = null;
 
     /**
      * 构造方法，负责下载/添加依赖，并启动插件
      */
-    public BukkitTemplate() {
+    public BukkitTemplate() throws ClassNotFoundException {
         plugin = this;
-        //防止卡主线程
-        DependencyManager.parsePluginYml();
-        classes = loadClass();
-        ktPlugin = findInstance();
-//        CompletableFuture.supplyAsync(() -> {
-//            classes = loadClass();
-//            return findInstance();
-//        }).exceptionally(throwable -> {
-//            throwable.printStackTrace();
-//            onDisable();
-//            this.getLogger().warning("插件依赖异常，已注销插件!");
-//            return null;
-//        }).thenAcceptAsync(instance -> {
-//            if (instance == null) return;
-//            ktPlugin = instance;
-//            instance.onAsyncLoad();
-//            setEnabled(true);
-//            Bukkit.getScheduler().runTask(this, instance::onEnable);
-//            Bukkit.getScheduler().runTaskAsynchronously(this, instance::onAsyncEnable);
-//        }).exceptionally(throwable -> {
-//            throwable.printStackTrace();
-//            this.getLogger().warning("插件加载异常!");
-//            return null;
-//        });
+        if (!PluginDependency.parsePluginYml()) {
+            throw new RuntimeException("Loading dependencies error! please check your network!");
+        }
+        Bukkit.getLogger().info("[" + BukkitTemplate.getPlugin().getName() + "] Loading libraries successfully");
+        ReflectionUtil.addIsolatedURL(BukkitTemplate.class.getProtectionDomain().getCodeSource().getLocation());
+        isolatedClassLoader = new IsolatedClassLoader(
+                ReflectionUtil.getUrls(),
+                BukkitTemplate.class.getClassLoader()
+        );
+        ReflectionUtil.init();
+        loadInstance();
     }
 
-
     /**
-     * 寻找插件主类单例
+     * 加载插件主类
      */
-    private static KotlinPlugin findInstance() {
-        for (Class<?> aClass : classes) {
-            if (KotlinPlugin.class.isAssignableFrom(aClass)) {
-                try {
-                    Field instance = aClass.getDeclaredField("INSTANCE");
-                    instance.setAccessible(true);
-                    return (KotlinPlugin) instance.get(null);
-                } catch (NoSuchFieldException | IllegalAccessException e) {
-                    throw new RuntimeException(e);
+    private static void loadInstance() {
+        Class<?> instanceClass = findInstanceClass();
+        if (instanceClass == null) throw new RuntimeException("can not find plugin instance");
+        try {
+            Class<?> aClass = isolatedClassLoader.loadClass(PluginBootStrap.class.getName());
+            Constructor<?> constructor = aClass.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            bootStrap = constructor.newInstance();
+            constructor.setAccessible(false);
+            Field instance = instanceClass.getDeclaredField("INSTANCE");
+            instance.setAccessible(true);
+            for (Field declaredField : bootStrap.getClass().getDeclaredFields()) {
+                String name = declaredField.getType().getName();
+                if (name.equals(JavaPlugin.class.getName())) {
+                    ReflectionUtil.replaceObject(bootStrap, declaredField, plugin);
+                } else if (name.equals(BukkitPlugin.class.getName())) {
+                    ReflectionUtil.replaceObject(bootStrap, declaredField, instance.get(null));
                 }
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        throw new RuntimeException("can not find plugin instance! you need a object class implement KotlinPlugin");
     }
 
     /**
-     * 加载需要的class
+     * 遍历寻找插件入口类 继承 BukkitPlugin
      *
-     * @return 需要的class的集合
+     * @return 插件入口类
      */
-    private static List<Class<?>> loadClass() {
-        ArrayList<Class<?>> classes = new ArrayList<>();
-        //猜測程序入口以减少遍历的消耗
+    private static Class<?> findInstanceClass() {
+        Class<?> target;
+        String name = BukkitPlugin.class.getName();
+        //猜测名
         String canonicalName = BukkitTemplate.class.getCanonicalName();
-        String guessName = canonicalName.replace(".libs.core.BukkitTemplate", "") + "." + plugin.getName();
+        String guessName = canonicalName.replace(".libs.core.BukkitTemplate", "") + "." + getPlugin().getName();
         try {
-            Class<?> aClass = Class.forName(guessName, false, BukkitTemplate.class.getClassLoader());
-            if (KotlinPlugin.class.isAssignableFrom(aClass)) {
-                classes.add(aClass);
-                return classes;
+            target = Class.forName(guessName, false, isolatedClassLoader);
+            Class<?>[] interfaces = target.getInterfaces();
+            for (Class<?> anInterface : interfaces) {
+                if (anInterface.getName().equals(name)) {
+                    return target;
+                }
             }
-        } catch (ClassNotFoundException ignored) {
+        } catch (Exception ignored) {
         }
         URL location = BukkitTemplate.class.getProtectionDomain().getCodeSource().getLocation();
-
         File srcFile;
         try {
             srcFile = new File(location.toURI());
@@ -107,25 +106,34 @@ public class BukkitTemplate extends JavaPlugin {
                 srcFile = new File(location.getPath());
             }
         }
+        AtomicReference<Class<?>> clazz = new AtomicReference<>(null);
+        AtomicBoolean find = new AtomicBoolean(false);
         try (JarFile jarFile = new JarFile(srcFile)) {
-            jarFile.stream().forEach((it) -> {
-                String name = it.getName();
-                if (!name.endsWith(".class") || name.startsWith("META-INF")) {
+            //并行查找速度更快
+            jarFile.stream().parallel().forEach((it) -> {
+                if (find.get()) return;
+                String urlName = it.getName();
+                if (!urlName.endsWith(".class") || urlName.startsWith("META-INF")) {
                     return;
                 }
                 Class<?> aClass;
                 try {
-                    aClass = Class.forName(name.replace('/', '.').substring(0, name.length() - 6), false, BukkitTemplate.class.getClassLoader());
-                } catch (ClassNotFoundException e) {
-                    return;
-                }
-                if (KotlinPlugin.class.isAssignableFrom(aClass) && KotlinPlugin.class != aClass) {
-                    classes.add(aClass);
+                    String className = urlName.replace('/', '.').substring(0, urlName.length() - 6);
+                    aClass = Class.forName(className, false, BukkitTemplate.class.getClassLoader());
+                    Class<?>[] interfaces = aClass.getInterfaces();
+                    if (interfaces.length == 0) return;
+                    for (Class<?> anInterface : interfaces) {
+                        if (name.equals(anInterface.getName())) {
+                            find.set(true);
+                            clazz.set(Class.forName(className, false, isolatedClassLoader));
+                        }
+                    }
+                } catch (Throwable ignored) {
                 }
             });
         } catch (IOException ignored) {
         }
-        return classes;
+        return clazz.get();
     }
 
     /**
@@ -133,43 +141,56 @@ public class BukkitTemplate extends JavaPlugin {
      *
      * @return Bukkit插件主类
      */
-    public static BukkitTemplate getPlugin() {
+    public static JavaPlugin getPlugin() {
         return plugin;
     }
 
     /**
-     * 获取插件主类
-     *
-     * @return 插件主类
+     * 为了支持混淆，所以不会出现方法名
+     * 故而通过特定参数来识别方法
      */
-    public static KotlinPlugin getKtPlugin() {
-        return ktPlugin;
+    private static <T> void invokeBootStrapMethod(Class<T> sign)
+            throws InvocationTargetException, IllegalAccessException {
+        Method target = null;
+        for (Method declaredMethod : bootStrap.getClass().getDeclaredMethods()) {
+            Class<?>[] parameterTypes = declaredMethod.getParameterTypes();
+            if (parameterTypes.length == 1 && parameterTypes[0] == sign) {
+                target = declaredMethod;
+                break;
+            }
+        }
+        if (target != null) {
+            target.setAccessible(true);
+            target.invoke(bootStrap, (Object) null);
+            target.setAccessible(false);
+        }
     }
 
     @Override
     public void onLoad() {
-        ktPlugin.onLoad();
+        try {
+            invokeBootStrapMethod(Float.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void onEnable() {
-        PlaceHolderHook.INSTANCE.checkHooked();
-        ktPlugin.onEnable();
-        Bukkit.getScheduler().runTaskAsynchronously(this, this::onAsyncEnabled);
-//        CompletableFuture.runAsync(this::onAsyncEnabled);
-    }
-
-    public void onAsyncEnabled() {
-        ktPlugin.onAsyncEnable();
+        try {
+            invokeBootStrapMethod(Boolean.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
     public void onDisable() {
-        if (ktPlugin != null)
-            ktPlugin.onDisable();
-        Bukkit.getScheduler().cancelTasks(this);
-        HandlerList.unregisterAll(this);
-        DisableHook.disableAll();
+        try {
+            invokeBootStrapMethod(Double.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
 }

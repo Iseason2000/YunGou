@@ -4,6 +4,8 @@
 yungou_cargo_[id]_canbuy_[num]: 能否购买[num] 个,不写默认1,可以买返回true 不能买返回false
 yungou_cargo_[id]_hasbuy: 已经购买了多少个
 yungou_cargo_[id]_num: 最大购买份数
+yungou_cargo_[id]_sold: 已经出售的份数
+yungou_cargo_[id]_remain: 剩余的份数
 yungou_cargo_[id]_enable: 是否启用 启用返回 true 不启用返回 false
 yungou_cargo_[id]_starttime: 创建时间
 yungou_cargo_[id]_lasttime: 上次开奖时间

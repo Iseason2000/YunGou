@@ -79,8 +79,8 @@ object PAPI : PlaceholderExpansion() {
                     if (!DatabaseConfig.isConnected || !cargo.enable) return "0"
                     var existNum: Int? = null
                     try {
-                        dbTransaction {
-                            existNum = Records.slice(Records.num.sum())
+                        existNum = dbTransaction {
+                            Records.slice(Records.num.sum())
                                 .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
                                 ?.get(Records.num.sum()) ?: 0
                         }
@@ -92,6 +92,24 @@ object PAPI : PlaceholderExpansion() {
                 when (type.lowercase()) {
 //                    "id" -> return cargo!!.id.value
                     "num" -> return cargo.num.toString()
+                    "sold" -> {
+                        if (!DatabaseConfig.isConnected) return "0"
+                        return dbTransaction {
+                            Records.slice(Records.num.sum())
+                                .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
+                                ?.get(Records.num.sum()) ?: 0
+                        }.toString()
+                    }
+
+                    "remain" -> {
+                        if (!DatabaseConfig.isConnected) return "0"
+                        return (cargo.num - dbTransaction {
+                            Records.slice(Records.num.sum())
+                                .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
+                                ?.get(Records.num.sum()) ?: 0
+                        }).toString()
+                    }
+
                     "enable" -> return cargo.enable.toString()
                     "starttime" -> return cargo.startTime.toString()
                     "lasttime" -> return cargo.lastTime.toString()

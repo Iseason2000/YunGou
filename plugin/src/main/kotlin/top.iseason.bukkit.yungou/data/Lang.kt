@@ -1,18 +1,12 @@
 package top.iseason.bukkit.yungou.data
 
-import org.bukkit.configuration.ConfigurationSection
-import top.iseason.bukkittemplate.config.SimpleYAMLConfig
 import top.iseason.bukkittemplate.config.annotations.Comment
 import top.iseason.bukkittemplate.config.annotations.FilePath
 import top.iseason.bukkittemplate.config.annotations.Key
-import top.iseason.bukkittemplate.debug.SimpleLogger
-import top.iseason.bukkittemplate.utils.bukkit.MessageUtils
 
 @Key
 @FilePath("lang.yml")
-object Lang : SimpleYAMLConfig() {
-    @Comment("消息前缀")
-    var prefix = "&6[&a云购&6]&r "
+object Lang : top.iseason.bukkittemplate.config.Lang() {
 
     var receive_success = "&a奖励 &6{0} &a已发放到你的背包"
     var receive_broadcastMessage = "&a恭喜玩家 &6{0} &a获得 &6{1}"
@@ -56,15 +50,11 @@ object Lang : SimpleYAMLConfig() {
     var command__buy_can_not_buy = "&c商品剩余 &6{0} &c个,无法购买 &6{1} &c个"
     var command__buy_start = "&a商品 &6{0} &a已售完,将在&6 {1} &a秒后开奖"
     var command__buy_error = "&c购买异常，请联系管理员!"
-    var command__buy_success = "&a已购买 &6{0} &aX &6{1}"
+    var command__buy_success = "&a玩家 {0} 已购买 &6{1} &aX &6{2} &7{3}/{4}, 剩余{5}"
 
-    var command__toogle = "&a商品当前状态为: &6{0}"
+    var command__toggle = "&a商品当前状态为: &6{0}"
 
     var placeholder__no_record = "没有记录"
     var placeholder__record = "玩家 {0} 获得了{1} 第 {2} 期 时间 {3}"
 
-    override fun onLoaded(section: ConfigurationSection) {
-        SimpleLogger.prefix = prefix
-        MessageUtils.defaultPrefix = prefix
-    }
 }

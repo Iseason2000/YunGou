@@ -9,6 +9,7 @@ class Cargo(id: EntityID<String>) : StringEntity(id) {
     companion object : StringEntityClass<Cargo>(Cargos)
 
     var item by Cargos.item
+    var command by Cargos.command
     var num by Cargos.num
     var enable by Cargos.enable
     var startTime by Cargos.startTime

@@ -4,7 +4,6 @@ plugins {
 
 repositories {
     mavenCentral()
-    maven { url = uri("https://repo.extendedclip.com/content/repositories/placeholderapi/") }
 }
 
 dependencies {
@@ -18,9 +17,8 @@ dependencies {
 
     // 本地依赖放在libs文件夹内
     compileOnly(fileTree("libs") { include("*.jar") })
-    implementation("org.bstats:bstats-bukkit:3.0.0")
+    implementation("org.bstats:bstats-bukkit:3.0.1")
     compileOnly("org.spigotmc:spigot-api:1.19.3-R0.1-SNAPSHOT")
-    compileOnly("me.clip:placeholderapi:2.11.2")
 }
 
 // 插件名称，请在gradle.properties 修改
@@ -42,9 +40,16 @@ val exposedVersion: String by rootProject
 val obfuscated: String by rootProject
 val isObfuscated = obfuscated == "true"
 val shrink: String by rootProject
+val defaultFile = File("../build", "${rootProject.name}-${rootProject.version}.jar")
+val output =
+    if (isObfuscated)
+        File(jarOutputFile, "${rootProject.name}-${rootProject.version}-obfuscated.jar")
+    else
+        File(jarOutputFile, "${rootProject.name}-${rootProject.version}.jar")
 
 tasks {
     shadowJar {
+
         if (isObfuscated) {
             relocate("top.iseason.bukkittemplate.BukkitTemplate", "a")
         }
@@ -62,7 +67,7 @@ tasks {
         filesMatching("plugin.yml") {
             // 删除注释,你可以返回null以删除整行，但是IDEA有bug会报错，故而返回了""
             filter {
-                if (it.trim().startsWith("#")) "" else it
+                if (it.trim().startsWith("#")) null else it
             }
             expand(
                 "main" to if (isObfuscated) "a" else "$groupS.libs.core.BukkitTemplate",
@@ -75,13 +80,6 @@ tasks {
         }
     }
 }
-task<com.github.jengelman.gradle.plugins.shadow.tasks.ConfigureShadowRelocation>("relocateShadowJar") {
-    target = tasks.shadowJar.get()
-    prefix = "$groupS.libs"
-    shadowJar.minimize()
-}
-tasks.shadowJar.get().dependsOn(tasks.getByName("relocateShadowJar"))
-
 tasks.register<proguard.gradle.ProGuardTask>("buildPlugin") {
     group = "minecraft"
     verbose()
@@ -92,6 +90,8 @@ tasks.register<proguard.gradle.ProGuardTask>("buildPlugin") {
     if (shrink != "true") {
         dontshrink()
     }
+    allowaccessmodification() //优化时允许访问并修改有修饰符的类和类的成员
+    dontusemixedcaseclassnames() // 混淆时不要大小写混合
     optimizationpasses(5)
     dontwarn()
     //添加运行环境
@@ -113,19 +113,19 @@ tasks.register<proguard.gradle.ProGuardTask>("buildPlugin") {
     //class规则
     if (isObfuscated) keep(allowObf, "class a {}")
     else keep("class $groupS.libs.core.BukkitTemplate {}")
-    keep(allowObf, "class * implements $groupS.libs.core.KotlinPlugin {*;}")
+    keep("class kotlin.Metadata {}")
+    keep(allowObf, "class $groupS.libs.core.PluginBootStrap {*;}")
+    keep(allowObf, "class * implements $groupS.libs.core.BukkitPlugin {*;}")
     keepclassmembers("class * extends $groupS.libs.core.config.SimpleYAMLConfig {*;}")
     keepclassmembers("class * implements $groupS.libs.core.ui.container.BaseUI {*;}")
     keepclassmembers(allowObf, "class * implements org.bukkit.event.Listener {*;}")
-    keepclassmembers(allowObf, "class * implements org.jetbrains.exposed.dao.id.IdTable {*;}")
-    keepclassmembers(allowObf, "class * implements org.jetbrains.exposed.dao.Entity {*;}")
-    keepattributes("Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,*Annotation*,EnclosingMethod")
-    keepkotlinmetadata()
+    keepclassmembers(allowObf, "class * extends org.bukkit.event.Event {*;}")
+    keepclassmembers(allowObf, "class * extends org.jetbrains.exposed.dao.id.IdTable {*;}")
+    keepclassmembers(allowObf, "class * extends org.jetbrains.exposed.dao.Entity {*;}")
+    keepattributes("Exceptions,InnerClasses,Signature,Deprecated,SourceFile,LineNumberTable,*Annotation*")
+    keepclassmembers("enum * {public static **[] values();public static ** valueOf(java.lang.String);}")
     repackageclasses()
-    if (isObfuscated)
-        outjars(File(jarOutputFile, "${rootProject.name}-${rootProject.version}-obfuscated.jar"))
-    else
-        outjars(File(jarOutputFile, "${rootProject.name}-${rootProject.version}.jar"))
+    outjars(output)
 }
 
 fun getProperties(properties: String) = rootProject.properties[properties].toString()

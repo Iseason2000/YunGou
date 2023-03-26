@@ -4,6 +4,7 @@ import org.bukkit.Bukkit
 import org.jetbrains.exposed.dao.IntEntity
 import org.jetbrains.exposed.dao.IntEntityClass
 import org.jetbrains.exposed.dao.id.EntityID
+import top.iseason.bukkittemplate.hook.PlaceHolderHook
 import top.iseason.bukkittemplate.utils.bukkit.ItemUtils
 import top.iseason.bukkittemplate.utils.bukkit.ItemUtils.canAddItem
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
@@ -29,6 +30,19 @@ class Lottery(id: EntityID<Int>) : IntEntity(id) {
         val player = Bukkit.getPlayer(uid) ?: return false
         if (hasReceive) {
             return false
+        }
+        if (car.command != null) {
+            try {
+                Bukkit.dispatchCommand(
+                    Bukkit.getConsoleSender(),
+                    PlaceHolderHook.setPlaceHolder(car.command!!.replace("%player%", player.name), player)
+                )
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            hasReceive = true
+            player.sendColorMessage(Lang.receive_success.formatBy(car.id))
+            return true
         }
         val item = ItemUtils.fromByteArray(car.item.bytes)
         return if (player.canAddItem(item) == 0) {

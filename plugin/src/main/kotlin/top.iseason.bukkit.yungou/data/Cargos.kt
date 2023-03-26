@@ -9,6 +9,7 @@ import top.iseason.bukkittemplate.utils.other.EasyCoolDown
 
 object Cargos : StringIdTable() {
     val item = blob("item")
+    val command = varchar("command", 255).nullable().default(null)
     val num = integer("num")
     val enable = bool("enable").default(true)
     val startTime = datetime("startTime")
