@@ -306,7 +306,8 @@ fun mainCommand() {
                     debug("&a已为 &6${player.name} &a购买 &6$id &aX &6$count 剩余 ${cargo.num - after}")
                     if (after == cargo.num) {
                         //开奖
-                        broadcast(Lang.command__buy_start.formatBy(id, Config.countdown))
+                        broadcast(Lang.command__buy_start_broadcast.formatBy(id, Config.countdown))
+                        player.sendColorMessage(Lang.command__buy_start.formatBy(id, Config.countdown))
                         Lotteries.drawLottery(id)
                         debug("&6$id &a已开奖")
                     }
@@ -327,7 +328,7 @@ fun mainCommand() {
                     sender.sendColorMessage("&c没有人购买这一期的商品")
                     return@executor
                 }
-                broadcast(Lang.command__buy_start.formatBy(id, Config.countdown))
+                broadcast(Lang.command__buy_start_broadcast.formatBy(id, Config.countdown))
                 sender.sendColorMessage("&a强制开启成功")
                 debug("&6强制开启了商品 &c$id")
             }

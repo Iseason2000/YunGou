@@ -8,6 +8,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
 import top.iseason.bukkit.yungou.data.*
+import top.iseason.bukkittemplate.BukkitTemplate
 import top.iseason.bukkittemplate.config.DatabaseConfig
 import top.iseason.bukkittemplate.config.dbTransaction
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
@@ -28,15 +29,15 @@ object PAPI : PlaceholderExpansion() {
     private val lotteries = WeakHashMap<String, Lottery>()
 
     override fun getAuthor(): String {
-        return "Iseason"
+        return BukkitTemplate.getPlugin().description.authors.joinToString()
     }
 
     override fun getIdentifier(): String {
-        return "yungou"
+        return BukkitTemplate.getPlugin().description.name
     }
 
     override fun getVersion(): String {
-        return "1.0.0"
+        return BukkitTemplate.getPlugin().description.version
     }
 
     override fun persist(): Boolean {
@@ -62,7 +63,7 @@ object PAPI : PlaceholderExpansion() {
                 if ("canbuy".equals(type, true)) {
                     if (!cargo.enable || cargo.isCoolDown()) return "false"
                     var existNum: Int? = cargoBuy[id]
-                    if (!(coolDown.check(id, 500L) && existNum != null)) {
+                    if (!(coolDown.check(id, 200L) && existNum != null)) {
                         try {
                             dbTransaction {
                                 existNum = Records.slice(Records.num.sum())
@@ -202,7 +203,7 @@ object PAPI : PlaceholderExpansion() {
     private fun getCargo(id: String): Cargo? {
         if (!DatabaseConfig.isConnected) return null
         var cargo: Cargo? = cargoCache[id]
-        if (coolDown.check(id, 3000L) && cargo != null) {
+        if (coolDown.check(id, 1000L) && cargo != null) {
             dbTransaction {
                 cargo!!.refresh()
             }

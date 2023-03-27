@@ -48,7 +48,8 @@ object Lang : top.iseason.bukkittemplate.config.Lang() {
     var command__buy_not_enable = "&c商品 &6{0} &c未开售"
     var command__buy_is_cooldown = "&c商品 &6{0} &c冷却中"
     var command__buy_can_not_buy = "&c商品剩余 &6{0} &c个,无法购买 &6{1} &c个"
-    var command__buy_start = "&a商品 &6{0} &a已售完,将在&6 {1} &a秒后开奖"
+    var command__buy_start = "&a你买完了商品 &6{0} 将在&6 {1} &a秒后开奖"
+    var command__buy_start_broadcast = "&a商品 &6{0} &a已售完,将在&6 {1} &a秒后开奖"
     var command__buy_error = "&c购买异常，请联系管理员!"
     var command__buy_success = "&a玩家 {0} 已购买 &6{1} &aX &6{2} &7{3}/{4}, 剩余{5}"
 

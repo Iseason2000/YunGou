@@ -61,9 +61,10 @@ object Lotteries : IntIdTable() {
                 time = LocalDateTime.now()
             }
             val name = Bukkit.getOfflinePlayer(winner!!).name ?: winner.toString()
+            val message = Lang.receive_broadcastMessage.formatBy(name, id)
             submit(async = true, delay = Config.countdown * 20L) {
-                broadcast(Lang.receive_broadcastMessage.formatBy(name, id))
-                debug(Lang.receive_broadcastMessage.formatBy(name, id))
+                broadcast(message)
+                debug(message)
                 dbTransaction {
                     new.offeringPrizes()
                 }
