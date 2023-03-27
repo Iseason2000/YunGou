@@ -23,10 +23,10 @@ object PAPI : PlaceholderExpansion() {
 
     private val coolDown = WeakCoolDown<String>()
     private val cargoCache = WeakHashMap<String, Cargo>()
-    private val cargoBuy = WeakHashMap<String, Int>()
-    private val playerBuy = WeakHashMap<UUID, Int>()
-    private val lotteryAll = WeakHashMap<Int, Lottery>()
-    private val lotteries = WeakHashMap<String, Lottery>()
+    private val hasBuyCache = WeakHashMap<String, String>()
+    val playerBuy = WeakHashMap<UUID, String>()
+    private val lotteryAll = WeakHashMap<String, Lottery?>()
+    private val lotteries = WeakHashMap<String, Lottery?>()
 
     override fun getAuthor(): String {
         return BukkitTemplate.getPlugin().description.authors.joinToString()
@@ -62,32 +62,25 @@ object PAPI : PlaceholderExpansion() {
                 }
                 if ("canbuy".equals(type, true)) {
                     if (!cargo.enable || cargo.isCoolDown()) return "false"
-                    var existNum: Int? = cargoBuy[id]
-                    if (!(coolDown.check(id, 200L) && existNum != null)) {
-                        try {
-                            dbTransaction {
-                                existNum = Records.slice(Records.num.sum())
-                                    .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
-                                    ?.get(Records.num.sum()) ?: 0
-                            }
-                        } catch (_: Exception) {
-                        }
+                    val existNum: Int = dbTransaction {
+                        Records.slice(Records.num.sum())
+                            .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
+                            ?.get(Records.num.sum()) ?: 0
                     }
-                    if (existNum == null) return "false"
-                    return (existNum!! + count <= cargo.num).toString()
+                    return (existNum + count <= cargo.num).toString()
                 }
                 if ("hasbuy".equals(type, true)) {
                     if (!DatabaseConfig.isConnected || !cargo.enable) return "0"
-                    var existNum: Int? = null
-                    try {
-                        existNum = dbTransaction {
-                            Records.slice(Records.num.sum())
-                                .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
-                                ?.get(Records.num.sum()) ?: 0
-                        }
-                    } catch (_: Exception) {
+                    val cache = hasBuyCache[params]
+                    if (cache != null && coolDown.check(params, 1000)) {
+                        return cache
                     }
-                    if (existNum == null) return "0"
+                    val existNum: Int = dbTransaction {
+                        Records.slice(Records.num.sum())
+                            .select { Records.cargo eq id and (Records.serial eq cargo.serial) }.firstOrNull()
+                            ?.get(Records.num.sum()) ?: 0
+                    }
+                    hasBuyCache[params] = existNum.toString()
                     return existNum.toString()
                 }
                 when (type.lowercase()) {
@@ -136,29 +129,27 @@ object PAPI : PlaceholderExpansion() {
                     return null
                 }
                 var lottery: Lottery?
-                if ("*".equals(id, true)) {
-                    lottery = lotteryAll[count]
-                    if (lottery == null || !coolDown.check("all_$count", 3000)) {
-                        dbTransaction {
-//                            addLogger(StdOutSqlLogger)
-                            lottery =
-                                Lottery.all().limit(1, count.toLong()).orderBy(Lotteries.time to SortOrder.DESC)
-                                    .firstOrNull()
+                if ("*" == id) {
+                    lottery = lotteryAll[params]
+                    if (!lotteries.containsKey(params) || !coolDown.check(params, 30000)) {
+                        lottery = dbTransaction {
+                            Lottery.all().limit(1, count.toLong()).orderBy(Lotteries.time to SortOrder.DESC)
+                                .firstOrNull()
                         }
-                        lotteryAll[count] = lottery
+                        lotteryAll[params] = lottery
                     }
                 } else {
-                    val key = "${id}_$count"
-                    lottery = lotteries[key]
-                    if (lottery == null || !coolDown.check(key, 3000)) {
-                        dbTransaction {
-                            lottery = Lottery.find { Lotteries.cargo eq id }.limit(1, count.toLong())
+                    lottery = lotteries[params]
+                    if (!lotteries.containsKey(params) || !coolDown.check(params, 30000)) {
+                        lottery = dbTransaction {
+                            Lottery.find { Lotteries.cargo eq id }.limit(1, count.toLong())
                                 .orderBy(Lotteries.time to SortOrder.DESC)
                                 .firstOrNull()
                         }
-                        lotteries[key] = lottery
+                        lotteries[params] = lottery
                     }
                 }
+
                 if (lottery == null)
                     return Lang.placeholder__no_record
                 return Lang.placeholder__record.formatBy(
@@ -178,18 +169,15 @@ object PAPI : PlaceholderExpansion() {
                 when (type.lowercase()) {
                     "hasbuy" -> {
                         var hasBuy = playerBuy[uniqueId]
-                        if (hasBuy != null && coolDown.check(uniqueId.toString(), 500)) return hasBuy.toString()
-                        try {
-                            dbTransaction {
-                                hasBuy = Records.slice(Records.num.sum())
-                                    .select { Records.cargo eq id and (Records.serial eq cargo.serial) and (Records.uid eq uniqueId) }
-                                    .firstOrNull()
-                                    ?.get(Records.num.sum()) ?: 0
-                            }
-                        } catch (_: Exception) {
-                        }
+                        if (hasBuy != null && coolDown.check(uniqueId.toString(), 5000)) return hasBuy.toString()
+                        hasBuy = dbTransaction {
+                            Records.slice(Records.num.sum())
+                                .select { Records.cargo eq id and (Records.serial eq cargo.serial) and (Records.uid eq uniqueId) }
+                                .firstOrNull()
+                                ?.get(Records.num.sum()) ?: 0
+                        }.toString()
                         playerBuy[uniqueId] = hasBuy
-                        return hasBuy.toString()
+                        return hasBuy
                     }
 
                     else -> return null
@@ -204,9 +192,7 @@ object PAPI : PlaceholderExpansion() {
         if (!DatabaseConfig.isConnected) return null
         var cargo: Cargo? = cargoCache[id]
         if (coolDown.check(id, 1000L) && cargo != null) {
-            dbTransaction {
-                cargo!!.refresh()
-            }
+            return cargo
         } else try {
             cargo = dbTransaction { Cargo.findById(id) }
             cargoCache[id] = cargo
