@@ -305,7 +305,7 @@ fun mainCommand() {
                         )
                     )
                     debug("&a已为 &6${player.name} &a购买 &6$id &aX &6$count 剩余 ${cargo.num - after}")
-                    PAPI.playerBuy.remove(player.uniqueId)
+                    PAPI.playerBuy.remove("${player.uniqueId} $id")
                     if (after == cargo.num) {
                         //开奖
                         broadcast(Lang.command__buy_start_broadcast.formatBy(id, Config.countdown))

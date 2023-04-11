@@ -7,7 +7,7 @@ import top.iseason.bukkittemplate.config.StringIdTable
 import top.iseason.bukkittemplate.config.dbTransaction
 import top.iseason.bukkittemplate.utils.other.EasyCoolDown
 
-object Cargos : StringIdTable() {
+object Cargos : StringIdTable("Cargos") {
     val item = blob("item")
     val command = varchar("command", 255).nullable().default(null)
     val num = integer("num")

@@ -12,21 +12,20 @@ import top.iseason.bukkittemplate.BukkitTemplate
 import top.iseason.bukkittemplate.config.DatabaseConfig
 import top.iseason.bukkittemplate.config.dbTransaction
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.formatBy
+import top.iseason.bukkittemplate.utils.other.CoolDown
 import top.iseason.bukkittemplate.utils.other.EasyCoolDown
-import top.iseason.bukkittemplate.utils.other.WeakCoolDown
 import java.lang.Long.max
 import java.time.Duration
 import java.time.LocalDateTime
-import java.util.*
 
 object PAPI : PlaceholderExpansion() {
 
-    private val coolDown = WeakCoolDown<String>()
-    private val cargoCache = WeakHashMap<String, Cargo>()
-    private val hasBuyCache = WeakHashMap<String, String>()
-    val playerBuy = WeakHashMap<UUID, String>()
-    private val lotteryAll = WeakHashMap<String, Lottery?>()
-    private val lotteries = WeakHashMap<String, Lottery?>()
+    private val coolDown = CoolDown<String>()
+    private val cargoCache = HashMap<String, Cargo>()
+    private val hasBuyCache = HashMap<String, String>()
+    val playerBuy = HashMap<String, String>()
+    private val lotteryAll = HashMap<String, Lottery?>()
+    private val lotteries = HashMap<String, Lottery?>()
 
     override fun getAuthor(): String {
         return BukkitTemplate.getPlugin().description.authors.joinToString()
@@ -152,31 +151,48 @@ object PAPI : PlaceholderExpansion() {
 
                 if (lottery == null)
                     return Lang.placeholder__no_record
-                return Lang.placeholder__record.formatBy(
-                    Bukkit.getOfflinePlayer(lottery!!.uid).name!!,
-                    lottery!!._readValues!![Lotteries.cargo],
-                    lottery!!.serial,
-                    lottery!!.time
-                )
+                return try {
+                    val name = if (lottery.player.isEmpty()) {
+                        val offlinePlayer = Bukkit.getOfflinePlayer(lottery.uid)
+                        if (offlinePlayer.hasPlayedBefore()) offlinePlayer.name else lottery.uid
+                    } else lottery.player
+                    Lang.placeholder__record.formatBy(
+                        name,
+                        lottery._readValues!![Lotteries.cargo],
+                        lottery.serial,
+                        lottery.time
+                    )
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                    Lang.placeholder__no_record
+                }
             }
 
             "player" -> {
                 val id = args.getOrNull(1) ?: return null
                 val type = args.getOrNull(2) ?: return null
                 if (player == null) return null
-                val cargo = getCargo(id) ?: return null
                 val uniqueId = player.uniqueId
                 when (type.lowercase()) {
                     "hasbuy" -> {
-                        var hasBuy = playerBuy[uniqueId]
-                        if (hasBuy != null && coolDown.check(uniqueId.toString(), 5000)) return hasBuy.toString()
-                        hasBuy = dbTransaction {
-                            Records.slice(Records.num.sum())
-                                .select { Records.cargo eq id and (Records.serial eq cargo.serial) and (Records.uid eq uniqueId) }
-                                .firstOrNull()
-                                ?.get(Records.num.sum()) ?: 0
-                        }.toString()
-                        playerBuy[uniqueId] = hasBuy
+                        val key = "$uniqueId $id"
+                        var hasBuy = playerBuy[key]
+                        if (hasBuy != null && coolDown.check(key, 800)) return hasBuy
+                        hasBuy = try {
+                            dbTransaction {
+                                val serial =
+                                    Cargos.slice(Cargos.serial).select { Cargos.id eq id }.limit(1).firstOrNull()
+                                        ?.get(Cargos.serial) ?: return@dbTransaction null
+                                Records.slice(Records.num.sum())
+                                    .select { (Records.uid eq uniqueId and (Records.cargo eq id)) and (Records.serial eq serial) }
+                                    .firstOrNull()
+                                    ?.get(Records.num.sum()) ?: 0
+                            }.toString()
+                        } catch (e: Exception) {
+                            "999"
+                        }
+                        if (hasBuy != null)
+                            playerBuy[key] = hasBuy
                         return hasBuy
                     }
 
@@ -195,7 +211,7 @@ object PAPI : PlaceholderExpansion() {
             return cargo
         } else try {
             cargo = dbTransaction { Cargo.findById(id) }
-            cargoCache[id] = cargo
+            cargoCache[id] = cargo!!
         } catch (e: Exception) {
             return null
         }

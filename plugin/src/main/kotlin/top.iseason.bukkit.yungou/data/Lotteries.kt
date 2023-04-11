@@ -7,6 +7,7 @@ import org.jetbrains.exposed.sql.and
 import org.jetbrains.exposed.sql.javatime.datetime
 import org.jetbrains.exposed.sql.select
 import org.jetbrains.exposed.sql.sum
+import top.iseason.bukkit.yungou.placeholders.PAPI
 import top.iseason.bukkittemplate.config.dbTransaction
 import top.iseason.bukkittemplate.debug.debug
 import top.iseason.bukkittemplate.utils.bukkit.MessageUtils.broadcast
@@ -17,8 +18,9 @@ import java.time.LocalDateTime
 import java.util.*
 
 //获奖名单
-object Lotteries : IntIdTable() {
+object Lotteries : IntIdTable("Lotteries") {
     val uid = uuid("uid")
+    val player = varchar("player", 255).default("")
     val cargo = reference("cargo", Cargos, ReferenceOption.CASCADE, ReferenceOption.CASCADE)
     val serial = integer("serial")
     val time = datetime("time")
@@ -54,24 +56,31 @@ object Lotteries : IntIdTable() {
                     break
                 }
             }
+            val name = Bukkit.getOfflinePlayer(winner!!).name ?: winner.toString()
             val new = Lottery.new {
                 uid = winner!!
+                this.player = name
                 this.cargo = cargo
                 serial = cargo.serial
                 time = LocalDateTime.now()
             }
-            val name = Bukkit.getOfflinePlayer(winner!!).name ?: winner.toString()
             val message = Lang.receive_broadcastMessage.formatBy(name, id)
+            val newId = new.id
             submit(async = true, delay = Config.countdown * 20L) {
                 broadcast(message)
                 debug(message)
                 dbTransaction {
-                    new.offeringPrizes()
+                    val findById = Lottery.findById(newId)!!
+                    if (!findById.hasReceive) {
+                        findById.offeringPrizes()
+                    }
                 }
             }
             cargo.serial += 1
             cargo.lastTime = LocalDateTime.now()
         }
+        if (winner != null)
+            PAPI.playerBuy.remove("${winner!!} $id")
         return winner
     }
 

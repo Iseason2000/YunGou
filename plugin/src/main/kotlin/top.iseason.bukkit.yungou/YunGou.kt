@@ -28,7 +28,20 @@ object YunGou : BukkitPlugin {
         DatabaseConfig.initTables(Cargos, Lotteries, Records)
         PlayerListener.register()
         SimpleLogger.prefix = "&a[&6${javaPlugin.description.name}&a]&r ".toColor()
-        info("&a插件已启用!")
+        val trimIndent = """
+            　
+             __     __           _____             
+             \ \   / /          / ____|            
+              \ \_/ /   _ _ __ | |  __  ___  _   _ 
+               \   / | | | '_ \| | |_ |/ _ \| | | |
+                | || |_| | | | | |__| | (_) | |_| |
+                |_| \__,_|_| |_|\_____|\___/ \__,_|
+            　                                                           
+              作者：Iseason       QQ: 1347811744
+            
+        """.trimIndent()
+        info(trimIndent)
+        info("&a插件已启用!!")
     }
 
     override fun onAsyncEnable() {

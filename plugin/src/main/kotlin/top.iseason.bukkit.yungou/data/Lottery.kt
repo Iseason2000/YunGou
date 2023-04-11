@@ -14,6 +14,7 @@ class Lottery(id: EntityID<Int>) : IntEntity(id) {
     companion object : IntEntityClass<Lottery>(Lotteries)
 
     var uid by Lotteries.uid
+    var player by Lotteries.player
     var cargo by Cargo referencedOn Lotteries.cargo
     var serial by Lotteries.serial
     var time by Lotteries.time
